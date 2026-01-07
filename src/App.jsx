@@ -38,17 +38,44 @@ function App() {
     };
   }, [currentTrackIndex, volume]);
 
-  const handleSearch = async () => {
-      if (!searchQuery) return;
-      try {
-        const response = await fetch(`https://music-app-backend-sharutia.waw0.amvera.tech/api/search?q=${searchQuery}`);
-        const data = await response.json();
-        setSearchResults(data);
-        setView('search');
-      } catch (err) {
-        console.error("Ошибка поиска. Проверь сервер на 3001", err);
-      }
-  };
+// 1. Исправляем функцию поиска
+	const handleSearch = async () => {
+		if (!searchQuery) return;
+		try {
+		  // ОБЯЗАТЕЛЬНО с https:// в начале!
+		  const url = `https://music-app-backend-sharutia.waw0.amvera.tech/api/search?q=${encodeURIComponent(searchQuery)}`;
+		  const response = await fetch(url);
+		  const data = await response.json();
+		  setSearchResults(data);
+		  setView('search');
+		} catch (err) {
+		  console.error("Ошибка поиска:", err);
+		}
+	};
+
+	// 2. Исправляем функцию выбора трека
+	const selectTrack = (track) => {
+		// ОБЯЗАТЕЛЬНО с https:// в начале!
+		const streamUrl = `https://music-app-backend-sharutia.waw0.amvera.tech/api/play?url=${encodeURIComponent(track.url)}`;
+		
+		const newTrack = {
+		  id: track.id,
+		  title: track.title,
+		  artist: track.artist,
+		  src: streamUrl,
+		  cover: track.cover,
+		  color: "#1e1e1e" 
+		};
+		
+		setTracks(prev => [newTrack, ...prev]);
+		setCurrentTrackIndex(0);
+		
+		audioRef.current.pause();
+		audioRef.current.src = streamUrl;
+		audioRef.current.play();
+		setIsPlaying(true);
+		setView('player');
+	};
 
   const handleVolumeChange = (e) => {
     const val = parseFloat(e.target.value);
@@ -64,19 +91,6 @@ function App() {
     setProgress(e.target.value);
   };
 
-  const selectTrack = (track) => {
-    const streamUrl = `https://music-app-backend-sharutia.waw0.amvera.tech/api/play?url=${encodeURIComponent(track.url)}`;
-    const newTrack = { ...track, src: streamUrl, color: "#1a1a1a" };
-    
-    setTracks(prev => [newTrack, ...prev]);
-    setCurrentTrackIndex(0);
-    
-    audioRef.current.pause();
-    audioRef.current.src = streamUrl;
-    audioRef.current.play();
-    setIsPlaying(true);
-    setView('player');
-  };
 
   const togglePlay = () => {
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
