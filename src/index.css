@@ -33,3 +33,30 @@ body {
   background: #1DB954;
   border-radius: 10px;
 }
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Эффект плавающего фона (Liquid Background) */
+.liquid-bg {
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: radial-gradient(circle, var(--tw-gradient-from) 0%, transparent 70%);
+  filter: blur(80px);
+  z-index: 0;
+  animation: drift 20s infinite alternate;
+}
+
+@keyframes drift {
+  from { transform: rotate(0deg) scale(1); }
+  to { transform: rotate(10deg) scale(1.1); }
+}
