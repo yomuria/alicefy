@@ -30,6 +30,10 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          # Передаем напрямую — это 100% сработает для Vite
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to Server
         uses: easingthemes/ssh-deploy@main
