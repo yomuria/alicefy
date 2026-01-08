@@ -1,68 +1,155 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 @import "tailwindcss";
-
-@theme {
-  --color-spotify: #1DB954;
-  --color-dark: #121212;
-  --color-dark-highlight: #1A1A1A;
-  --color-text-gray: #B3B3B3;
-}
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--color-dark);
+  background-color: #000;
   color: white;
   margin: 0;
-  -webkit-font-smoothing: antialiased; /* Делает шрифты четкими как на iPhone */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* ЭФФЕКТ "ТОЛСТОГО" СТЕКЛА */
+.ios-glass-heavy {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(60px) saturate(210%) brightness(110%);
+  -webkit-backdrop-filter: blur(60px) saturate(210%) brightness(110%);
   
+  /* Многослойные тени для имитации грани алмаза */
+  box-shadow: 
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.3), /* Верхний блик */
+    0 30px 60px -12px rgba(0, 0, 0, 0.7);
+  border-radius: 44px;
 }
 
-.anim-slide-up {
-  animation: slideUp 0.4s ease-out;
+/* Слайдер громкости */
+.volume-slider-track {
+  @apply relative h-2 w-full bg-white/10 rounded-full overflow-hidden backdrop-blur-md;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #1DB954;
-  border-radius: 10px;
-}
-
-@layer utilities {
-  .glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-}
-
-/* Эффект плавающего фона (Liquid Background) */
-.liquid-bg {
+/* Анимация "Жидкого" фона */
+.mesh-gradient {
   position: absolute;
-  top: -25%;
-  left: -25%;
-  width: 150%;
-  height: 150%;
-  z-index: 0;
-  pointer-events: none;
-  /* Используем переменную из JS */
-  background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, transparent 50%);
-  filter: blur(100px);
-  animation: drift 15s infinite alternate ease-in-out;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, var(--primary-color) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, var(--primary-color) 0, transparent 50%);
+  filter: blur(80px);
+  opacity: 0.6;
 }
 
-@keyframes drift {
-  from {
-    transform: rotate(0deg) scale(1);
-  }
-  to {
-    transform: rotate(10deg) scale(1.1) translate(5%, 5%);
-  }
+/* Зернистость (Film Grain) для премиального вида */
+:root {
+  --primary-color: #4c1d95;
+  --secondary-color: #2e1065;
+  --glass-blur: 28px;
+}
+
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.mesh-gradient {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, var(--primary-color) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, var(--secondary-color) 0, transparent 50%);
+  filter: blur(80px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesh-gradient { animation: none; }
+}
+
+/* Apply glass look to existing .ios-glass utility classes so old markup benefits */
+.ios-glass {
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%) contrast(1.03);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%) contrast(1.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.ios-glass .glass-sheen { display: none; }
+
+@media (prefers-reduced-motion: reduce) { .ios-glass { transition: none; } }
+
+/* compatibility with older class name used in markup */
+.noise-overlay { position: fixed; inset: 0; z-index: 50; opacity: 0.04; pointer-events: none; mix-blend-mode: overlay; }
+
+/* Cover effects */
+.cover { position: relative; transform-style: preserve-3d; transition: transform .18s cubic-bezier(.2,.9,.2,1); will-change: transform; }
+.cover-img { transform: perspective(900px) rotateX(calc(var(--py,0) * -8deg)) rotateY(calc(var(--px,0) * 10deg)) scale(1.02); transition: transform .15s linear; }
+.cover-vignette { position:absolute; inset:0; border-radius:inherit; pointer-events:none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.45) 100%); mix-blend-mode:multiply; opacity:0.9 }
+.cover-bloom { position:absolute; left:10%; top:6%; width:60%; height:30%; pointer-events:none; background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 40%, transparent 60%); filter: blur(30px); mix-blend-mode: screen; opacity:0.6; }
+
+/* Vinyl spin subtle */
+@keyframes vinylSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.cover-root.playing .cover-img { animation: vinylSpin 8s linear infinite; }
+
+/* Disable SVG refraction filter on coarse pointers (mobile) */
+.glass[data-filter="off"] { filter: none !important; }
+
+/* Красивый слайдер громкости */
+.volume-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Убираем синее выделение при тапе в Telegram */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Скроллбар */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Фикс обложки */
+.cover-img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
 }

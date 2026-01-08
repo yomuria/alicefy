@@ -1,0 +1,45 @@
+/* Glass component styles: iOS 26 inspired refined glass with edge shading, sheen and subtle refraction */
+.glass {
+  position: relative;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(150%) brightness(1.02) contrast(1.01);
+  backdrop-filter: blur(var(--glass-blur, 28px)) saturate(150%) brightness(1.02) contrast(1.01);
+  border: 1px solid rgba(255,255,255,0.055);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+  overflow: hidden;
+  transition: box-shadow .28s cubic-bezier(.2,.9,.2,1), transform .18s ease;
+  will-change: transform, filter;
+  /* subtle refraction — uses embedded SVG filter. kept low intensity to avoid sharp artifacts */
+  filter: url(#glassRefraction);
+}
+
+/* Lower the perceived pixelation by avoiding very high displacement and smoothing the filter */
+@supports (filter: url(#glassRefraction)) {
+  .glass { backface-visibility: hidden; }
+}
+
+.glass:focus-within { box-shadow: 0 28px 70px rgba(0,0,0,0.75); transform: translateY(-3px); }
+
+.glass-edge {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -20px 40px rgba(0,0,0,0.55);
+}
+
+.glass-sheen {
+  position: absolute; left: -30%; top: -10%; width: 160%; height: 60%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0) 65%);
+  transform-origin: center; filter: blur(10px); opacity: .95; pointer-events: none;
+  /* Controlled by pointer — moves the sheen across the surface */
+  left: calc(var(--sheen-x, -30%));
+  top: calc(var(--sheen-y, -10%));
+  transition: left .12s linear, top .12s linear, opacity .2s linear;
+}
+
+/* subtle tilt effect for depth */
+.glass { transform: perspective(1000px) rotateX(calc(var(--tilt-y, 0) * 4deg)) rotateY(calc(var(--tilt-x, 0) * 6deg)); }
+.glass-body { position: relative; z-index: 10; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass, .glass-sheen { transition: none; animation: none; }
+}
