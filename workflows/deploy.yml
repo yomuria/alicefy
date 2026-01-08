@@ -20,10 +20,13 @@ jobs:
         run: npm install
 
       # Создаем временный .env файл из секретов GitHub для билда
-      - name: Create .env file
+      - name: Create env file
         run: |
-          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHANNEL_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}" >> .env
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env
 
       - name: Build project
         run: npm run build

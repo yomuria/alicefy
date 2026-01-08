@@ -115,7 +115,8 @@ function App() {
       id: track.videoId || Date.now().toString(),
       title: track.title,
       artist: track.author?.name || "YouTube Artist",
-      src: `https://alicefy.duckdns.org/api/play?url=${encodeURIComponent(track.url)}`,
+      // Добавляем &id=...
+      src: `https://alicefy.duckdns.org/api/play?url=${encodeURIComponent(track.url)}&id=${track.videoId}`,
       cover: track.image || track.thumbnail || track.cover,
     };
     setTracks(prev => [newTrack, ...prev]);
