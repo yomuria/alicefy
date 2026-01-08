@@ -8,10 +8,10 @@ import { FastAverageColor } from 'fast-average-color';
 import { createClient } from '@supabase/supabase-js';
 
 // --- ИНИЦИАЛИЗАЦИЯ SUPABASE ---
-const supabase = createClient(
-  'https://okgghnulsurzripgwcxk.supabase.co',
-  'sb_publishable_IEJtk5W3g-EZunBjjeOWJw_nLt4u6Pp'
-);
+// --- ИНИЦИАЛИЗАЦИЯ SUPABASE ---
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY; 
+const supabase = createClient(supabaseUrl, supabaseKey);
 const fac = new FastAverageColor();
 
 function App() {
