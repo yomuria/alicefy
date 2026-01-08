@@ -31,12 +31,12 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Deploy to Server via SSH
+      - name: Deploy to Server
         uses: easingthemes/ssh-deploy@main
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           ARGS: "-rlgoDzvc -i --delete"
-          SOURCE: "dist/" # Что отправляем
+          SOURCE: "dist/" # Папка, которую создал робот GitHub
           REMOTE_HOST: ${{ secrets.SERVER_HOST }}
           REMOTE_USER: ${{ secrets.SERVER_USER }}
-          TARGET: "/var/www/my-app" # ПУТЬ К ПАПКЕ НА ТВОЕМ СЕРВЕРЕ
+          TARGET: "/root/music-app/frontend" # ТОЧНЫЙ ПУТЬ 
