@@ -46,17 +46,23 @@ body {
 /* Эффект плавающего фона (Liquid Background) */
 .liquid-bg {
   position: absolute;
-  width: 150%;
-  height: 150%;
   top: -25%;
   left: -25%;
-  background: radial-gradient(circle, var(--tw-gradient-from) 0%, transparent 70%);
-  filter: blur(80px);
+  width: 150%;
+  height: 150%;
   z-index: 0;
-  animation: drift 20s infinite alternate;
+  pointer-events: none;
+  /* Используем переменную из JS */
+  background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, transparent 50%);
+  filter: blur(100px);
+  animation: drift 15s infinite alternate ease-in-out;
 }
 
 @keyframes drift {
-  from { transform: rotate(0deg) scale(1); }
-  to { transform: rotate(10deg) scale(1.1); }
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(10deg) scale(1.1) translate(5%, 5%);
+  }
 }

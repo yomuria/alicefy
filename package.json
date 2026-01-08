@@ -12,8 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
+    "fast-average-color": "^9.5.0",
     "framer-motion": "^11.15.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
