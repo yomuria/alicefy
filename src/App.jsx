@@ -82,20 +82,29 @@ function App() {
     const isLiked = favorites.some(f => f.id === trackId);
 
     if (isLiked) {
+      // Удаление лайка (как и было)
       setFavorites(prev => prev.filter(f => f.id !== trackId));
       await supabase.from('liked_songs').delete().eq('track_id', trackId).eq('user_id', userId);
     } else {
+      // Добавление лайка
+      const trackUrl = track.src || `https://alicefy.duckdns.org/api/play?url=${encodeURIComponent(track.url)}&id=${trackId}`;
       const newLike = {
         user_id: userId,
         track_id: trackId,
         title: track.title,
         artist: track.author?.name || track.artist,
         cover_url: track.image || track.thumbnail || track.cover,
-        track_url: track.src || `https://alicefy.duckdns.org/api/play?url=${encodeURIComponent(track.url)}`
+        track_url: trackUrl
       };
-      // Оптимистичное обновление UI
+
       setFavorites(prev => [{...newLike, id: newLike.track_id, cover: newLike.cover_url, src: newLike.track_url}, ...prev]);
       await supabase.from('liked_songs').insert([newLike]);
+
+      // ВЫЗЫВАЕМ КЕШИРОВАНИЕ НА СЕРВЕРЕ (только при лайке!)
+      const originalUrl = track.url || track.src.split('url=')[1]?.split('&')[0];
+      if (originalUrl) {
+        fetch(`https://alicefy.duckdns.org/api/cache-like?url=${encodeURIComponent(decodeURIComponent(originalUrl))}&id=${trackId}`);
+      }
     }
   };
 
