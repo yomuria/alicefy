@@ -305,7 +305,7 @@ const handleSync = async () => {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-black text-white font-sans overflow-hidden">
+    <div className="min-h-[100dvh]">
       <Aurora colors={colors} />
       
       {/* Главный контейнер */}
