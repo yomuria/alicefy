@@ -339,11 +339,11 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col bg-black text-white font-sans min-h-screen overflow-y-auto">
+    <div className="flex flex-col bg-black/80 text-white font-sans min-h-screen overflow-hidden rounded-[40px] border border-white/10 shadow-2xl drag-region">
       <Aurora colors={colors} />
 
       {/* Главный контейнер */}
-      <div className="relative z-10 flex flex-col max-w-md mx-auto px-6 pt-12 pb-8">
+      <div className="relative z-10 flex flex-col max-w-md mx-auto px-6 pt-12 pb-8 w-full h-full no-drag">
         {/* Хедер навигации */}
         <div className="flex-1 flex justify-between items-center mb-6 min-h-12">
           {view === "player" ? (
