@@ -16,13 +16,10 @@ import { createClient } from "@supabase/supabase-js";
 import Glass from "./components/Glass";
 import Aurora from "./components/Aurora";
 
+console.log(import.meta.env);
+
 // Инициализация Supabase
 const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
-
-console.log(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
 );
