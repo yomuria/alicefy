@@ -17,7 +17,7 @@ function createWindow() {
   });
 
   // В режиме разработки грузим URL твоего Vite (обычно 5173)
-  win.loadURL('http://localhost:5173'); 
+  win.loadURL('https://alicefy.duckdns.org/'); 
   
   // Если хочешь сразу открыть инструменты разработчика:
   // win.webContents.openDevTools();
