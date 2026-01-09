@@ -527,39 +527,85 @@ function App() {
                         </button>
                       </div>
 
-                      {/* --- ГРОМКОСТЬ (Filling style) --- */}
-                      <div className="flex items-center gap-4 px-2">
-                        <div className="text-xs font-bold text-white/30 uppercase tracking-widest">
-                          Vol
-                        </div>
-                        <div className="relative flex-1 h-12 bg-white/5 rounded-2xl overflow-hidden border border-white/5 group active:scale-[0.99] transition-transform">
-                          {/* Фон уровня громкости (заливка) */}
-                          <div
-                            className="absolute top-0 left-0 h-full bg-white/20 backdrop-blur-md transition-all duration-75 ease-out"
-                            style={{ width: `${playerState.volume * 100}%` }}
-                          />
-
-                          {/* Текст процентов по центру (как в iOS control center) */}
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="text-sm font-bold text-white/50">
-                              {Math.round(playerState.volume * 100)}%
-                            </span>
-                          </div>
-
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={playerState.volume}
-                            onChange={(e) => {
-                              const vol = Number(e.target.value);
-                              audioRef.current.volume = vol;
-                              dispatch({ volume: vol });
-                            }}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                          />
-                        </div>
+                      {/* --- DYNAMIC ISLAND VOLUME --- */}
+                      <div className="flex justify-center mt-4">
+                        <motion.div
+                          layout // Магия Framer Motion для плавного изменения размеров
+                          initial={false}
+                          className="relative bg-white/10 backdrop-blur-md rounded-[24px] border border-white/5 overflow-hidden cursor-pointer"
+                          style={{ 
+                            width: playerState.isVolumeOpen ? "100%" : "120px",
+                            height: "48px" 
+                          }}
+                          onClick={() => dispatch({ isVolumeOpen: true })}
+                        >
+                          <AnimatePresence mode="wait">
+                            {!playerState.isVolumeOpen ? (
+                              // СОСТОЯНИЕ: Компактный "Остров"
+                              <motion.div
+                                key="compact"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex items-center justify-center h-full gap-1.5"
+                              >
+                                <div className="text-[10px] font-bold text-white/40 uppercase tracking-tighter mr-1">Vol</div>
+                                {/* Анимированные бары звука (только когда играет) */}
+                                <div className="flex items-end gap-[3px] h-3">
+                                  <div className={`sound-bar ${playerState.isPlaying ? 'delay-1' : 'h-1'}`} />
+                                  <div className={`sound-bar ${playerState.isPlaying ? 'delay-2' : 'h-2'}`} />
+                                  <div className={`sound-bar ${playerState.isPlaying ? 'delay-3' : 'h-1'}`} />
+                                </div>
+                                <span className="ml-2 text-xs font-bold text-white/70">
+                                  {Math.round(playerState.volume * 100)}%
+                                </span>
+                              </motion.div>
+                            ) : (
+                              // СОСТОЯНИЕ: Развернутый слайдер
+                              <motion.div
+                                key="expanded"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="flex items-center h-full px-4 gap-4"
+                              >
+                                <div className="relative flex-1 h-8 bg-white/5 rounded-xl overflow-hidden">
+                                  <div
+                                    className="absolute top-0 left-0 h-full bg-white/30 backdrop-blur-md transition-all duration-75"
+                                    style={{ width: `${playerState.volume * 100}%` }}
+                                  />
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={playerState.volume}
+                                    autoFocus
+                                    onBlur={() => setTimeout(() => dispatch({ isVolumeOpen: false }), 200)}
+                                    onChange={(e) => {
+                                      const vol = Number(e.target.value);
+                                      audioRef.current.volume = vol;
+                                      dispatch({ volume: vol });
+                                    }}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <span className="text-[10px] font-bold text-white/50 uppercase">Slide to Adjust</span>
+                                  </div>
+                                </div>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dispatch({ isVolumeOpen: false });
+                                  }}
+                                  className="text-[10px] font-bold opacity-50 hover:opacity-100 uppercase"
+                                >
+                                  Done
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
                       </div>
                     </Glass>
                   </>

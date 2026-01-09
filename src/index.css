@@ -166,3 +166,18 @@ input[type=range]::-webkit-slider-thumb {
 .active-glow {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
+
+/* Анимация баров Dynamic Island */
+.sound-bar {
+  @apply w-1 bg-white rounded-full;
+  animation: soundWave 1s ease-in-out infinite;
+}
+
+@keyframes soundWave {
+  0%, 100% { height: 4px; }
+  50% { height: 12px; }
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
