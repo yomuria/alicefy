@@ -1,8 +1,8 @@
-name: Deploy to Server
+name: Deploy Music App
 
 on:
   push:
-    branches: [main] # Срабатывает при пуше в ветку main
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
@@ -18,34 +18,34 @@ jobs:
           node-version: 18
           cache: "npm"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build project
+      # 1. Установка и сборка прямо в корне
+      - name: Build Project
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
-
-        # Опционально: полезно для отладки, можно потом удалить
-      - name: Check if env vars are in bundle
         run: |
-          if grep -q "supabase" dist/assets/*.js; then
-            echo "Supabase keys found in bundle ✓"
-          else
-            echo "WARNING: Supabase keys NOT found in bundle!"
-            exit 1
-          fi
+          npm install
+          npm run build
 
-      - name: Debug dist
-        run: grep "https://" dist/assets/index-*.js || echo "Ключи не найдены в билде!"
-
-      - name: Deploy to Server
+      # 2. Деплой фронтенда (папка dist -> папка frontend на сервере)
+      - name: Deploy Frontend to Server
         uses: easingthemes/ssh-deploy@v5.0.0
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          ARGS: "-rlgoDzvc -i --delete"
+          ARGS: "-rlgoDzvc --delete"
           SOURCE: "dist/"
           REMOTE_HOST: ${{ secrets.SERVER_HOST }}
           REMOTE_USER: ${{ secrets.SERVER_USER }}
-          TARGET: "/root/music-app/frontend/" # Попробуй добавить слэш в конце
+          TARGET: "/root/music-app/frontend/"
+
+      # 3. Перезапуск серверной части
+      - name: Restart Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /root/music-app
+            npm install --production
+            pm2 restart all || pm2 start index.js --name "music-server"
