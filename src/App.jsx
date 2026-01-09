@@ -27,22 +27,17 @@ const formatTime = (time) => {
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
 
+const USER_ID_KEY = 'alicefy_user_id'; 
+
 const getUserId = () => {
-  // 1. Пытаемся взять данные из Telegram
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (tgUser?.id) {
-    return `tg_${tgUser.id}`;
-  }
+  if (tgUser?.id) return `tg_${tgUser.id}`;
   
-  // 2. Если мы на обычном сайте, проверяем localStorage
-  let userId = localStorage.getItem('alicefy_user_id');
-  
-  // 3. Если ID еще нет, создаем новый случайный ID
+  let userId = localStorage.getItem(USER_ID_KEY); // Используем константу
   if (!userId) {
     userId = 'web_' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('alicefy_user_id', userId);
+    localStorage.setItem(USER_ID_KEY, userId);
   }
-  
   return userId;
 };
 
@@ -104,12 +99,38 @@ function App() {
 
 const [syncCode, setSyncCode] = useState(null);
 
-const generateSyncCode = async () => {
-    const r = await fetch(`${MusicService.baseUrl}/get-sync-code?userId=${USER_ID}`);
-    const data = await r.json();
-    setSyncCode(data.code);
+
+
+// Пример того, как должна выглядеть функция синхронизации в App.jsx
+const handleSync = async () => {
+    try {
+        // Используем MusicService.baseUrl, так как API_URL не существует
+        const res = await fetch(`${MusicService.baseUrl}/get-sync-code?userId=${USER_ID}`);
+        const data = await res.json();
+        setSyncCode(data.code);
+
+        const interval = setInterval(async () => {
+            // Опрашиваем сервер
+            const checkRes = await fetch(`${MusicService.baseUrl}/check-sync?code=${data.code}`);
+            const checkData = await checkRes.json();
+
+            if (checkData.status === 'success') {
+                clearInterval(interval);
+                
+                // Используем ПРАВИЛЬНЫЙ ключ, который определен в начале файла
+                localStorage.setItem(USER_ID_KEY, checkData.newUserId);
+                
+                alert("Синхронизация прошла успешно!");
+                window.location.reload(); 
+            }
+        }, 3000);
+
+        setTimeout(() => clearInterval(interval), 5 * 60 * 1000);
+    } catch (e) {
+        console.error("Ошибка при синхронизации:", e);
+    }
 };
-  
+
   // Аудио элемент
   const audioRef = useRef(null);
   // Внутри App() в блоке инициализации аудио:
@@ -326,7 +347,7 @@ const generateSyncCode = async () => {
                 </div>
               ) : (
                 <button 
-                  onClick={generateSyncCode}
+                  onClick={handleSync}
                   className="w-full py-2 bg-blue-500/20 text-blue-400 rounded-xl text-sm font-medium"
                 >
                   Синхронизировать с Telegram
