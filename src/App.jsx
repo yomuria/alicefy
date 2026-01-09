@@ -69,12 +69,13 @@ const MusicService = {
   async like(track, userId) {
     try {
       const params = new URLSearchParams({
-        id: track.id || track.videoId, // Берем либо id, либо videoId
-        url: track.originUrl || track.url, // Ссылка на YouTube
+        id: track.id || track.videoId,
+        url: track.originUrl || track.url,
         title: track.title,
         artist: track.artist || track.author?.name,
         cover: track.cover || track.thumbnail,
-        userId: userId
+        userId: userId,
+        duration: track.duration || 0 // Передаем длительность на сервер
       });
       await fetch(`${this.baseUrl}/cache-like?${params.toString()}`);
     } catch(e) { console.error(e); }
@@ -188,26 +189,27 @@ const generateSyncCode = async () => {
   }, []);
 
   const loadFavorites = async () => {
-  try {
-    const { data } = await supabase
-      .from('liked_songs')
-      .select('*')
-      .eq('user_id', USER_ID)
-      .order('created_at', { ascending: false });
-      
-    if (data) {
-      const formatted = data.map(d => ({
-        id: d.track_id, // Важно: это поле должно совпадать с videoId из поиска
-        title: d.title,
-        artist: d.artist,
-        cover: d.cover_url,
-        originUrl: d.track_url,
-        src: MusicService.getStreamUrl(d.track_url)
-      }));
-      setFavorites(formatted);
-    }
-  } catch (e) { console.error("Load favs error", e); }
-};
+    try {
+      const { data } = await supabase
+        .from('liked_songs')
+        .select('*')
+        .eq('user_id', USER_ID)
+        .order('created_at', { ascending: false });
+        
+      if (data) {
+        const formatted = data.map(d => ({
+          id: d.track_id,
+          title: d.title,
+          artist: d.artist,
+          cover: d.cover_url,
+          originUrl: d.track_url, // Ссылка на YT из базы
+          duration: d.duration || 0, // Длительность из базы
+          src: MusicService.getStreamUrl(d.track_url) // Ссылка для стриминга
+        }));
+        setFavorites(formatted);
+      }
+    } catch (e) { console.error("Load favs error", e); }
+  };
 
   const handleSelectTrack = (track) => {
     const videoId = track.videoId || track.id;
@@ -218,36 +220,28 @@ const generateSyncCode = async () => {
       return;
     }
 
-    // Сразу формируем объект для стейта
+    // Сохраняем длительность из поиска (в секундах)
+    const durationSeconds = track.duration?.seconds || 0;
+
     const trackWithSrc = {
       ...track,
       id: videoId,
-      title: track.title,
       artist: track.artist || track.author?.name || 'Unknown Artist',
-      cover: track.thumbnail || track.cover, // Проверь, чтобы тут была картинка
-      src: MusicService.getStreamUrl(videoUrl)
+      cover: track.cover || track.thumbnail,
+      src: MusicService.getStreamUrl(videoUrl),
+      originUrl: videoUrl, // ОБЯЗАТЕЛЬНО: для корректной записи лайка в БД
+      duration: durationSeconds // Сохраняем для отображения
     };
 
     setTracks([trackWithSrc]);
     setCurrentIndex(0);
     setView('player');
 
-    // Прямой запуск аудио (самый надежный для Telegram WebApp)
     if (audioRef.current) {
-      const audio = audioRef.current;
-      audio.pause();
-      audio.src = ''; // Полностью сбрасываем предыдущий ресурс
-      audio.load();
-      
-      // Устанавливаем новый URL
-      audio.src = trackWithSrc.src;
-      
-      // Используем событие, чтобы запустить только когда браузер готов
-      const startPlay = () => {
-        audio.play().catch(err => console.error("Playback error:", err));
-        audio.removeEventListener('canplay', startPlay);
-      };
-      audio.addEventListener('canplay', startPlay);
+      audioRef.current.pause();
+      audioRef.current.src = trackWithSrc.src;
+      audioRef.current.load();
+      audioRef.current.play().catch(err => console.error("Playback error:", err));
     }
   };
 
