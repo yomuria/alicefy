@@ -51,7 +51,8 @@ body {
 :root {
   --primary-color: #4c1d95;
   --secondary-color: #2e1065;
-  --glass-blur: 28px;
+  --blur-radius: 80px;
+  --gradient-opacity: 0.6;
 }
 
 .noise {
@@ -70,13 +71,9 @@ body {
   height: 200%;
   top: -50%;
   left: -50%;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, var(--primary-color) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%),
-    radial-gradient(at 0% 100%, var(--secondary-color) 0, transparent 50%);
-  filter: blur(80px);
-  opacity: 0.6;
+  background: radial-gradient(var(--primary-color) 0, transparent 50%);
+  filter: blur(var(--blur-radius));
+  opacity: var(--gradient-opacity);
   pointer-events: none;
 }
 
@@ -152,4 +149,21 @@ body {
 .cover-img {
   aspect-ratio: 1 / 1;
   object-fit: cover;
+}
+/* Улучшенные слайдеры */
+input[type=range] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  /* Для громкости мы скрываем стандартный ползунок, так как сделали кастомный дизайн */
+  width: 0; 
+  height: 0;
+}
+
+/* Эффект свечения для активных элементов */
+.active-glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
