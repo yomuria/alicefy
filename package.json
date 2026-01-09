@@ -37,7 +37,7 @@
     "tailwindcss": "^4.1.18",
     "vite": "^7.2.4"
   },
-  "main": "main.js",
+  "main": "main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
