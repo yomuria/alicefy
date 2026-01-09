@@ -337,11 +337,7 @@ function App() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-[100dvh]">
-=======
     <div className="flex flex-col bg-black text-white font-sans min-h-screen overflow-y-auto">
->>>>>>> 92722ba (fix: making sure we can scroll on mobile devices)
       <Aurora colors={colors} />
 
       {/* Главный контейнер */}
@@ -713,4 +709,3 @@ function App() {
 }
 
 export default App;
-
