@@ -343,7 +343,7 @@ function App() {
       <Aurora colors={colors} />
 
       {/* Главный контейнер */}
-      <div className="relative z-10 flex flex-col max-w-md mx-auto px-6 pt-12 pb-8">
+      <div className="relative z-10 flex flex-col w-full max-w-md mx-auto px-6 pt-12 pb-8">
         {/* Хедер навигации */}
         <div className="flex-1 flex justify-between items-center mb-6 min-h-12">
           {view === "player" ? (
@@ -533,9 +533,9 @@ function App() {
                           layout // Магия Framer Motion для плавного изменения размеров
                           initial={false}
                           className="relative bg-white/10 backdrop-blur-md rounded-[24px] border border-white/5 overflow-hidden cursor-pointer"
-                          style={{ 
+                          style={{
                             width: playerState.isVolumeOpen ? "100%" : "120px",
-                            height: "48px" 
+                            height: "48px"
                           }}
                           onClick={() => dispatch({ isVolumeOpen: true })}
                         >
@@ -593,7 +593,7 @@ function App() {
                                     <span className="text-[10px] font-bold text-white/50 uppercase">Slide to Adjust</span>
                                   </div>
                                 </div>
-                                <button 
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     dispatch({ isVolumeOpen: false });
