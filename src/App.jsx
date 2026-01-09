@@ -69,17 +69,19 @@ const MusicService = {
   async like(track, userId) {
     try {
       const params = new URLSearchParams({
-        id: track.id,
-        url: track.originUrl,
+        id: track.id || track.videoId, // Берем либо id, либо videoId
+        url: track.originUrl || track.url, // Ссылка на YouTube
         title: track.title,
-        artist: track.artist,
-        cover: track.cover,
-        userId: userId // ПЕРЕДАЕМ НАШ ID
+        artist: track.artist || track.author?.name,
+        cover: track.cover || track.thumbnail,
+        userId: userId
       });
       await fetch(`${this.baseUrl}/cache-like?${params.toString()}`);
     } catch(e) { console.error(e); }
   }
 };
+
+
 
 function App() {
   const [view, setView] = useState('player'); 
@@ -99,11 +101,21 @@ function App() {
     isPlaying: false, isLoading: false, duration: 0, currentTime: 0, volume: 1
   });
 
+const [syncCode, setSyncCode] = useState(null);
+
+const generateSyncCode = async () => {
+    const r = await fetch(`${MusicService.baseUrl}/get-sync-code?userId=${USER_ID}`);
+    const data = await r.json();
+    setSyncCode(data.code);
+};
+  
   // Аудио элемент
   const audioRef = useRef(null);
+  // Внутри App() в блоке инициализации аудио:
   if (!audioRef.current) {
-    audioRef.current = new Audio();
-    audioRef.current.preload = "auto";
+      audioRef.current = new Audio();
+      audioRef.current.crossOrigin = "anonymous"; // Добавьте это!
+      audioRef.current.preload = "auto";
   }
   // --- 1. Управление с экрана блокировки и шторки уведомлений ---
   useEffect(() => {
@@ -167,21 +179,6 @@ function App() {
   }, [tracks]); // Зависимость для переключений
 
   useEffect(() => {
-  if (currentTrack && audioRef.current) {
-    const audio = audioRef.current;
-    
-    // Сбрасываем старый поток полностью
-    audio.pause();
-    audio.src = currentTrack.src;
-    audio.load(); // Важно для переинициализации сетевого соединения
-    
-    if (playerState.isPlaying) {
-      audio.play().catch(e => console.error("Playback failed", e));
-    }
-  }
-}, [currentIndex]); // Срабатывает именно при переключении трека
-  // Инициализация
-  useEffect(() => {
     if (tg) { 
       tg.ready(); 
       tg.expand();
@@ -191,54 +188,70 @@ function App() {
   }, []);
 
   const loadFavorites = async () => {
-    try {
-      // Добавляем .eq('user_id', USER_ID)
-      const { data } = await supabase
-        .from('liked_songs')
-        .select('*')
-        .eq('user_id', USER_ID) // <--- Фильтруем по нашему ID
-        .order('created_at', { ascending: false });
-        
-      if (data) {
-        const formatted = data.map(d => ({
-          id: d.track_id,
-          title: d.title,
-          artist: d.artist,
-          cover: d.cover_url,
-          originUrl: d.track_url,
-          src: MusicService.getStreamUrl(d.track_url)
-        }));
-        setFavorites(formatted);
-      }
-    } catch (e) { console.error("Load favs error", e); }
-  };
-
-  
-
-const handleSelectTrack = (track) => {
-  const duration = track.seconds || 0; // Берем секунды из поиска
-  
-  const normalized = {
-    id: track.videoId,
-    title: track.title,
-    artist: track.author?.name || "Unknown",
-    cover: track.thumbnail,
-    duration: duration,
-    src: MusicService.getStreamUrl(track.url),
-  };
-  
-  setTracks(prev => [normalized, ...prev]);
-  setCurrentIndex(0);
-  setView('player');
-
-  // ПРИНУДИТЕЛЬНО ставим длительность сразу!
-  dispatch({ 
-    duration: duration, 
-    currentTime: 0, 
-    isPlaying: true,
-    isLoading: true 
-  });
+  try {
+    const { data } = await supabase
+      .from('liked_songs')
+      .select('*')
+      .eq('user_id', USER_ID)
+      .order('created_at', { ascending: false });
+      
+    if (data) {
+      const formatted = data.map(d => ({
+        id: d.track_id, // Важно: это поле должно совпадать с videoId из поиска
+        title: d.title,
+        artist: d.artist,
+        cover: d.cover_url,
+        originUrl: d.track_url,
+        src: MusicService.getStreamUrl(d.track_url)
+      }));
+      setFavorites(formatted);
+    }
+  } catch (e) { console.error("Load favs error", e); }
 };
+
+  const handleSelectTrack = (track) => {
+    const videoId = track.videoId || track.id;
+    const videoUrl = track.url || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : null);
+
+    if (!videoUrl) {
+      console.error("URL трека не определен");
+      return;
+    }
+
+    // Сразу формируем объект для стейта
+    const trackWithSrc = {
+      ...track,
+      id: videoId,
+      title: track.title,
+      artist: track.artist || track.author?.name || 'Unknown Artist',
+      cover: track.thumbnail || track.cover, // Проверь, чтобы тут была картинка
+      src: MusicService.getStreamUrl(videoUrl)
+    };
+
+    setTracks([trackWithSrc]);
+    setCurrentIndex(0);
+    setView('player');
+
+    // Прямой запуск аудио (самый надежный для Telegram WebApp)
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      audio.pause();
+      audio.src = ''; // Полностью сбрасываем предыдущий ресурс
+      audio.load();
+      
+      // Устанавливаем новый URL
+      audio.src = trackWithSrc.src;
+      
+      // Используем событие, чтобы запустить только когда браузер готов
+      const startPlay = () => {
+        audio.play().catch(err => console.error("Playback error:", err));
+        audio.removeEventListener('canplay', startPlay);
+      };
+      audio.addEventListener('canplay', startPlay);
+    }
+  };
+
+  
   const handleNext = () => {
     if (tracks.length > 0) {
       setCurrentIndex(prev => (prev + 1) % tracks.length);
@@ -309,7 +322,24 @@ const handleSelectTrack = (track) => {
             {view === 'favorites' ? <Music size={20} /> : <Heart size={20} className={favorites.length > 0 ? "fill-white/20" : ""} />}
           </button>
         </div>
-
+          {!USER_ID.startsWith('tg_') && (
+            <div className="p-4 bg-white/5 rounded-2xl mb-4 border border-white/10">
+              <p className="text-xs opacity-60 mb-2">Хочешь сохранить лайки навсегда?</p>
+              {syncCode ? (
+                <div className="text-center">
+                  <p className="text-2xl font-mono font-bold tracking-widest text-blue-400">{syncCode}</p>
+                  <p className="text-[10px] mt-2 opacity-50">Отправь этот код боту в Telegram</p>
+                </div>
+              ) : (
+                <button 
+                  onClick={generateSyncCode}
+                  className="w-full py-2 bg-blue-500/20 text-blue-400 rounded-xl text-sm font-medium"
+                >
+                  Синхронизировать с Telegram
+                </button>
+              )}
+            </div>
+          )}
         {/* Контент */}
         <div className="flex-1 relative">
           <AnimatePresence mode="wait">
@@ -447,7 +477,17 @@ const handleSelectTrack = (track) => {
                 ) : (
                     <div className="space-y-3">
                     {favorites.map((f, i) => (
-                        <div key={f.id} onClick={() => { setTracks(favorites); setCurrentIndex(i); setView('player'); }} 
+                        <div key={f.id} onClick={() => { 
+                          setTracks(favorites); 
+                          setCurrentIndex(i); 
+                          setView('player'); // Исправлено здесь
+                          if (audioRef.current) {
+                            audioRef.current.pause(); // Останавливаем старый трек
+                            audioRef.current.src = f.src;
+                            audioRef.current.load();
+                            audioRef.current.play().catch(err => console.error("Playback error:", err));
+                          }
+                        }}
                             className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl active:scale-95 transition-transform border border-white/5">
                         <img src={f.cover} className="w-12 h-12 rounded-xl object-cover bg-neutral-800" />
                         <div className="flex-1 min-w-0 text-left">
@@ -506,6 +546,10 @@ const handleSelectTrack = (track) => {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="text-[10px] opacity-20 p-4 text-center">
+                Account ID: {USER_ID} <br/>
+                (Save this code to restore your music later)
               </div>
             </div>
           </motion.div>
