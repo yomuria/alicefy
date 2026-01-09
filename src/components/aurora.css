@@ -1,21 +1,73 @@
 /* Aurora background layers for an elegant iOS-like animated gradient */
-.aurora-root { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.aurora-layer {
-  position: absolute; width: 130%; height: 130%; top: -15%; left: -15%; border-radius: 50%;
-  filter: blur(96px) saturate(140%);
-  mix-blend-mode: screen; opacity: .85; transform-origin: center;
-  background: radial-gradient(circle at 25% 30%, var(--primary-color) 0%, transparent 30%), radial-gradient(circle at 75% 70%, var(--secondary-color) 0%, transparent 25%);
+.aurora-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
-.layer-1 { opacity: .9; }
-.layer-2 { opacity: .6; }
+.aurora-layer {
+  position: absolute;
+  width: 130%;
+  height: 130%;
+  top: -15%;
+  left: -15%;
+  border-radius: 50%;
+  filter: blur(96px) saturate(140%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  transform-origin: center;
+  background:
+    radial-gradient(
+      circle at 25% 30%,
+      var(--primary-color) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 75% 70%,
+      var(--secondary-color) 0%,
+      transparent 25%
+    );
+}
+.layer-1 {
+  opacity: 0.9;
+}
+.layer-2 {
+  opacity: 0.6;
+}
 
 .aurora-mesh {
-  position:absolute; inset:0; pointer-events:none; mix-blend-mode: overlay; opacity:.25;
-  background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.02) 0, transparent 25%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.06) 0, transparent 35%);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.25;
+  background-image:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.02) 0,
+      transparent 25%
+    ),
+    radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.06) 0, transparent 35%);
   filter: blur(60px);
   animation: meshMove 14s ease-in-out infinite;
 }
 
-@keyframes meshMove { 0%{transform:translate(0,0)}50%{transform:translate(6%, -4%)}100%{transform:translate(0,0)} }
+@keyframes meshMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(6%, -4%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
 
-@media (prefers-reduced-motion: reduce) { .aurora-layer, .aurora-mesh { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .aurora-layer,
+  .aurora-mesh {
+    animation: none;
+  }
+}
