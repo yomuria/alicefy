@@ -9,6 +9,7 @@ import {
   Heart,
   Music,
   ArrowLeft,
+  Users,
 } from "lucide-react";
 import { FastAverageColor } from "fast-average-color";
 import { createClient } from "@supabase/supabase-js";
@@ -89,8 +90,149 @@ const MusicService = {
   },
 };
 
+
+// Добавляем объект SocialService для работы с БД
+const SocialService = {
+  async initUser(userId, username) {
+    await supabase.from("users").upsert({
+      id: userId,
+      username: username,
+      last_seen: new Date(),
+    });
+  },
+
+  async searchUsers(query, currentUserId) {
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .ilike("username", `%${query}%`)
+      .neq("id", currentUserId)
+      .limit(10);
+    return data || [];
+  },
+
+  async getFriends(userId) {
+    const { data } = await supabase
+      .from("friendships")
+      .select("*, requester:users!requester_id(*), receiver:users!receiver_id(*)")
+      .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+      .eq("status", "accepted");
+
+    return (data || []).map((f) => (f.requester_id === userId ? f.receiver : f.requester));
+  },
+
+  async sendMessage(senderId, receiverId, content, type = "text", trackData = null) {
+    return await supabase.from("messages").insert({
+      sender_id: senderId,
+      receiver_id: receiverId,
+      content,
+      type,
+      track_data: trackData,
+    });
+  }
+};
+
+// --- Компонент списка друзей ---
+const FriendsView = ({ userId, onSelectFriend }) => {
+  const [friends, setFriends] = useState([]);
+  const [search, setSearch] = useState("");
+  const [foundUsers, setFoundUsers] = useState([]);
+
+  useEffect(() => {
+    SocialService.getFriends(userId).then(setFriends);
+  }, [userId]);
+
+  const handleSearch = async () => {
+    const res = await SocialService.searchUsers(search, userId);
+    setFoundUsers(res);
+  };
+
+  return (
+    <div className="h-full flex flex-col p-4">
+      <h2 className="text-2xl font-bold mb-4">Друзья</h2>
+      <div className="flex gap-2 mb-6">
+        <input 
+          className="flex-1 bg-white/10 rounded-xl px-4 py-2 outline-none"
+          placeholder="Поиск..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <button onClick={handleSearch} className="p-2 bg-blue-600 rounded-xl"><Search size={20}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto space-y-2">
+        {friends.map(f => (
+          <div key={f.id} onClick={() => onSelectFriend(f)} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">{f.username?.[0]}</div>
+            <div>{f.username}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- Компонент Чата ---
+const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const scrollRef = useRef();
+
+  useEffect(() => {
+    const loadChat = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser},receiver_id.eq.${friend.id}),and(sender_id.eq.${friend.id},receiver_id.eq.${currentUser})`)
+        .order('created_at', { ascending: true });
+      if (data) setMessages(data);
+    };
+    loadChat();
+
+    const channel = supabase.channel(`chat_${friend.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        setMessages(prev => [...prev, payload.new]);
+      }).subscribe();
+    
+    return () => supabase.removeChannel(channel);
+  }, [friend.id]);
+
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  return (
+    <div className="h-full flex flex-col bg-black">
+      <div className="p-4 border-b border-white/10 flex gap-4 items-center">
+        <button onClick={onBack}><ArrowLeft/></button>
+        <span className="font-bold">{friend.username}</span>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map(m => (
+          <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'}`}>
+            <div className={`p-3 rounded-2xl max-w-[80%] ${m.sender_id === currentUser ? 'bg-blue-600' : 'bg-white/10'}`}>
+              {m.type === 'track' ? (
+                <div className="flex items-center gap-2">
+                  <img src={m.track_data.cover} className="w-10 h-10 rounded-lg" />
+                  <div className="text-xs truncate">{m.track_data.title}</div>
+                  <button onClick={() => onPlayTrack(m.track_data)} className="p-1 bg-white text-black rounded-full"><Play size={14}/></button>
+                </div>
+              ) : m.content}
+            </div>
+          </div>
+        ))}
+        <div ref={scrollRef} />
+      </div>
+      <div className="p-4 flex gap-2">
+        <input className="flex-1 bg-white/10 rounded-xl px-4 py-2" value={input} onChange={e => setInput(e.target.value)} />
+        <button onClick={() => { SocialService.sendMessage(currentUser, friend.id, input); setInput(""); }}>Отправить</button>
+      </div>
+    </div>
+  );
+};
+
+
+
 function App() {
   const [view, setView] = useState("player");
+  const [activeFriend, setActiveFriend] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,6 +261,19 @@ function App() {
   );
 
   const [syncCode, setSyncCode] = useState(null);
+
+
+  
+  // Инициализация пользователя при загрузке
+  useEffect(() => {
+    const username = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || `User_${USER_ID.slice(0, 5)}`;
+    SocialService.initUser(USER_ID, username);
+  }, []);
+
+  const handleFriendSelect = (friend) => {
+    setActiveFriend(friend);
+    setView("chat");
+  };
 
   // Пример того, как должна выглядеть функция синхронизации в App.jsx
   const handleSync = async () => {
@@ -338,6 +493,7 @@ function App() {
     if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
   };
 
+
   return (
     <div className="flex flex-col bg-black/80 text-white font-sans min-h-screen overflow-hidden rounded-[40px] border border-white/10 shadow-2xl drag-region">
       <Aurora colors={colors} />
@@ -457,7 +613,7 @@ function App() {
                           />
                         </button>
                       </div>
-
+                      
                       {/* --- ПРОГРЕСС БАР --- */}
                       <div className="mb-6 group">
                         <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -527,6 +683,12 @@ function App() {
                           />
                         </button>
                       </div>
+                       <button 
+                          onClick={() => setView("friends")}
+                          className="absolute top-2 right-2 p-2 bg-white/10 rounded-full z-20" // Подстрой стили позиционирования
+                        >
+                          <Users size={20} /> 
+                        </button>
 
                       {/* --- DYNAMIC ISLAND VOLUME --- */}
                       <div className="flex justify-center mt-4">
@@ -680,6 +842,27 @@ function App() {
                     ))}
                   </div>
                 )}
+              </motion.div>
+            )}
+            {/* 3. ДРУЗЬЯ (Выносим сюда!) */}
+            {view === "friends" && (
+              <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col">
+                <FriendsView userId={USER_ID} onSelectFriend={handleFriendSelect} />
+                <button onClick={() => setView("player")} className="mx-auto mb-6 bg-white/10 px-6 py-2 rounded-full">Назад</button>
+              </motion.div>
+            )}
+            {/* 4. ЧАТ (Выносим сюда!) */}
+            {view === "chat" && activeFriend && (
+              <motion.div key="chat" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute inset-0 z-[60] bg-black">
+                <ChatView 
+                  currentUser={USER_ID} 
+                  friend={activeFriend} 
+                  onBack={() => setView("friends")}
+                  onPlayTrack={(track) => {
+                    handleSelectTrack(track);
+                    setView("player");
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
