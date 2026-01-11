@@ -158,7 +158,7 @@ const FriendsView = ({ userId, onSelectFriend }) => {
     SocialService.getFriends(userId).then(setFriends);
   }, [userId]);
 
-  // Было: const handleSearchFriend = () => { ...
+  // Было: const handleSearchFriend = () => {s ...
 // Стало:
 const handleSearchFriend = async () => {
   if (!searchFriendQuery.trim()) return;
