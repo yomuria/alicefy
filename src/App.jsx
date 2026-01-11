@@ -148,53 +148,24 @@ const SocialService = {
   }
 };
 
-// --- Компонент списка друзей ---
+// --- ИСПРАВЛЕННЫЙ КОМПОНЕНТ FriendsView ---
+// Замените старый компонент FriendsView (строки 157-230) на этот код:
+
 const FriendsView = ({ userId, onSelectFriend }) => {
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
-
 
   useEffect(() => {
     SocialService.getFriends(userId).then(setFriends);
   }, [userId]);
 
-  // Было: const handleSearchFriend = () => {s ...
-// Стало:
-const handleSearch = async () => {
+  const handleSearch = async () => {
     if (!search.trim()) return;
     
     const results = await SocialService.searchUsers(search, userId);
-    // Здесь нужно добавить состояние для результатов поиска
+    // TODO: Добавьте состояние для отображения результатов поиска
+    console.log("Результаты поиска:", results);
   };
-  const term = searchFriendQuery.trim();
-  const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .or(`username.ilike.%${term}%,id.eq.${term},id.eq.${withTg}`)
-    .neq("id", USER_ID)
-    .limit(10);
-
-  if (error) console.error(error);
-  else setFoundUsers(data || []);
-};
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .or(`username.ilike.%${term}%,id.eq.${term},id.eq.${withTg}`)
-    .neq("id", USER_ID)
-    .limit(10);
-
-  if (error) {
-    console.error("Ошибка поиска:", error);
-    alert("Ошибка базы данных");
-  } else {
-    console.log("Найдено:", data);
-    setFoundUsers(data); // Теперь это сработает!
-  }
-};
 
   return (
     <div className="h-full flex flex-col p-4">
@@ -206,12 +177,20 @@ const handleSearch = async () => {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <button onClick={handleSearch} className="p-2 bg-blue-600 rounded-xl"><Search size={20}/></button>
+        <button onClick={handleSearch} className="p-2 bg-blue-600 rounded-xl">
+          <Search size={20}/>
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto space-y-2">
         {friends.map(f => (
-          <div key={f.id} onClick={() => onSelectFriend(f)} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">{f.username?.[0]}</div>
+          <div 
+            key={f.id} 
+            onClick={() => onSelectFriend(f)} 
+            className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl cursor-pointer hover:bg-white/10"
+          >
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">
+              {f.username?.[0]}
+            </div>
             <div>{f.username}</div>
           </div>
         ))}
@@ -219,6 +198,33 @@ const handleSearch = async () => {
     </div>
   );
 };
+
+// ========================================
+// ДОПОЛНИТЕЛЬНО: Исправление handleSearchFriend в основном компоненте App
+// ========================================
+
+// В компоненте App (строка ~740) замените функцию handleSearchFriend на:
+
+
+
+// ========================================
+// ПОЛНЫЙ СПИСОК ОШИБОК В ВАШЕМ КОДЕ:
+// ========================================
+
+// ❌ ОШИБКА 1 (строки 174-230): 
+// После объявления функции handleSearch идёт дублирующийся код:
+// - const term = searchFriendQuery.trim(); (строка 175)
+// - Повторный вызов supabase (строки 177-182)
+// - Ещё один повторный вызов (строки 186-191)
+// 
+// ✅ РЕШЕНИЕ: Удалите ВСЕ строки после закрывающей скобки handleSearch
+
+// ❌ ОШИБКА 2: Использование несуществующих переменных
+// В FriendsView используется searchFriendQuery и setFoundUsers,
+// которые объявлены только в главном компоненте App
+//
+// ✅ РЕШЕНИЕ: Либо передайте их как props, либо используйте 
+// основной экран "friends" (view === "friends")
 
 // --- Компонент Чата ---
 const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
@@ -325,6 +331,29 @@ function App() {
     setActiveFriend(friend);
     setView("chat");
   };
+
+
+  const handleSearchFriend = async () => {
+  if (!searchFriendQuery.trim()) return;
+  
+  const term = searchFriendQuery.trim();
+  const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .or(`username.ilike.%${term}%,id.eq.${term},id.eq.${withTg}`)
+    .neq("id", USER_ID)
+    .limit(10);
+
+  if (error) {
+    console.error("Ошибка поиска:", error);
+    alert("Ошибка базы данных");
+  } else {
+    console.log("Найдено:", data);
+    setFoundUsers(data || []);
+  }
+};
 
   // Пример того, как должна выглядеть функция синхронизации в App.jsx
   const handleSync = async () => {
@@ -950,7 +979,6 @@ function App() {
               </div>
             </motion.div>
           )}
-            )}
             {/* 4. ЧАТ (Выносим сюда!) */}
             {view === "chat" && activeFriend && (
               <motion.div key="chat" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute inset-0 z-[60] bg-black">
