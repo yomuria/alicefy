@@ -4,25 +4,33 @@
   "version": "0.0.0",
   "type": "module",
   "homepage": "https://yomuria.github.io/my-spotify-app/",
+  "main": "main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "gh-pages -d dist"
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist",
+    "electron": "electron ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "fast-average-color": "^9.4.0",
     "framer-motion": "^11.0.0",
-    "lucide-react": "^0.446.0",
+    "lucide-react": "^0.562.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "electron": "^31.0.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
     "gh-pages": "^6.1.1",
-    "vite": "^5.1.0",
-    "tailwindcss": "^3.4.1",
     "postcss": "^8.4.35",
-    "autoprefixer": "^10.4.17"
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.1.0"
   }
 }
