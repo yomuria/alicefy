@@ -279,57 +279,64 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Шапка */}
-      <div className="p-6 pt-12 ios-glass-heavy border-b border-white/10 flex items-center gap-4">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full active:scale-90 transition-transform">
-          <ArrowLeft size={20} />
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#050505]">
+      {/* Шапка чата */}
+      <div className="p-6 pt-12 flex items-center gap-4 bg-black/40 backdrop-blur-md border-b border-white/5">
+        <button onClick={onBack} className="p-2 -ml-2 active:scale-90 transition-transform">
+          <ArrowLeft size={24} />
         </button>
-        <div>
-          <h2 className="font-bold text-lg">{friend.username}</h2>
-          <p className="text-[10px] text-green-400 uppercase tracking-widest">Online</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold">
+            {friend.username[0].toUpperCase()}
+          </div>
+          <div>
+            <div className="font-bold text-base leading-none">{friend.username}</div>
+            <div className="text-[10px] text-blue-400 font-medium tracking-widest uppercase mt-1">Online</div>
+          </div>
         </div>
       </div>
 
-      {/* Область сообщений */}
+      {/* Список сообщений */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
         {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 px-4 rounded-[22px] shadow-2xl ${
+          <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'} message-appear`}>
+            <div className={`max-w-[80%] p-3 px-4 rounded-[20px] ${
               m.sender_id === currentUser 
-                ? 'bg-blue-600 text-white rounded-tr-none' 
-                : 'bg-white/10 backdrop-blur-md border border-white/5 rounded-tl-none'
+                ? 'bg-blue-600 text-white rounded-br-none shadow-blue-500/20 shadow-lg' 
+                : 'bg-white/10 backdrop-blur-md text-white rounded-bl-none border border-white/5'
             }`}>
-              <p className="text-[15px] leading-relaxed">{m.content}</p>
+              <p className="text-[15px] leading-snug">{m.content}</p>
             </div>
           </div>
         ))}
-        {/* Якорь для скролла */}
-        <div ref={scrollRef} className="h-24" /> 
+        {/* Якорь для скролла + отступ чтобы инпут не закрывал текст */}
+        <div ref={scrollRef} className="h-24" />
       </div>
 
-      {/* Поле ввода - Опущено вниз, стиль iOS 26 */}
-      <div className="p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent">
-        <div className="ios-glass-heavy flex items-center gap-2 p-2 pl-5 rounded-[30px] border border-white/10 shadow-2xl">
+      {/* Поле ввода - Опущено вниз */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <div className="ios-input-container flex items-center gap-2 p-1.5 pl-4 rounded-[28px]">
           <input
-            className="flex-1 bg-transparent py-3 outline-none text-[16px] placeholder:text-white/20"
-            placeholder="Сообщение..."
+            className="flex-1 bg-transparent py-2.5 outline-none text-[16px] placeholder:text-white/30"
+            placeholder="Ваше сообщение..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown} // Слушаем Enter
+            onKeyDown={handleKeyDown}
           />
-          <button 
+          <button
             onClick={handleSend}
-            className="w-11 h-11 bg-white text-black rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg"
+            disabled={!input.trim()}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+              input.trim() ? 'bg-white text-black scale-100' : 'bg-white/10 text-white/20 scale-90'
+            }`}
           >
-            <ArrowLeft className="rotate-90" size={20} />
+            <SkipForward className="-rotate-90" size={18} fill="currentColor" />
           </button>
         </div>
       </div>
     </div>
   );
 };
-
 
 
 function App() {
