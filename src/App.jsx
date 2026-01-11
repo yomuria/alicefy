@@ -227,28 +227,34 @@ const FriendsView = ({ userId, onSelectFriend }) => {
 // основной экран "friends" (view === "friends")
 
 // --- Компонент Чата ---
-// --- КОМПОНЕНТ ChatView (iOS 26 Style) ---
 const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef();
-
+  // Отправка сообщения
   const handleSend = async () => {
     if (!input.trim()) return;
+    
+    // Вызываем твой сервис (убедись, что SocialService доступен)
     const { error } = await supabase.from('messages').insert({
       sender_id: currentUser,
       receiver_id: friend.id,
       content: input,
       type: 'text'
     });
+
     if (!error) {
       setInput("");
+      // Легкая вибрация при отправке (iOS style)
       window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
     }
   };
 
+  // Обработка Enter
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSend();
+    if (e.key === 'Enter') {
+      handleSend();
+    }
   };
 
   useEffect(() => {
@@ -273,63 +279,46 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   return (
-    // Важно: absolute inset-0 держит чат ВНУТРИ скругленного контейнера App
-    <div className="absolute inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-3xl">
-      
-      {/* HEADER: Плавающее стекло */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-6 pt-8 pb-4 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={onBack} 
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md active:scale-90 transition-transform"
-          >
-            <ArrowLeft size={20} />
-          </button>
-
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-bold text-white tracking-wide">{friend.username}</span>
-            <span className="text-[10px] text-green-400 font-medium tracking-widest uppercase flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/> 
-              Online
-            </span>
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#050505]">
+      {/* Шапка чата */}
+      <div className="p-6 pt-12 flex items-center gap-4 bg-black/40 backdrop-blur-md border-b border-white/5">
+        <button onClick={onBack} className="p-2 -ml-2 active:scale-90 transition-transform">
+          <ArrowLeft size={24} />
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold">
+            {friend.username[0].toUpperCase()}
           </div>
-
-          <div className="w-10 h-10" /> {/* Placeholder для симметрии */}
+          <div>
+            <div className="font-bold text-base leading-none">{friend.username}</div>
+            <div className="text-[10px] text-blue-400 font-medium tracking-widest uppercase mt-1">Online</div>
+          </div>
         </div>
       </div>
 
-      {/* MESSAGES AREA */}
-      <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 chat-mask no-scrollbar">
-        <div className="space-y-6"> {/* Увеличенный отступ между группами */}
-          {messages.map((m, i) => {
-            const isMe = m.sender_id === currentUser;
-            return (
-              <div 
-                key={m.id || i} 
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'} message-appear`}
-                style={{ animationDelay: `${i * 0.05}s` }} // Каскадная анимация при загрузке
-              >
-                <div className={`
-                  msg-bubble max-w-[75%] p-4 text-[15px] leading-relaxed
-                  ${isMe 
-                    ? 'bg-blue-600/80 text-white rounded-[24px] rounded-br-sm' 
-                    : 'bg-white/10 text-white rounded-[24px] rounded-bl-sm'}
-                `}>
-                  {m.content}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={scrollRef} />
-        </div>
+      {/* Список сообщений */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+        {messages.map((m) => (
+          <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'} message-appear`}>
+            <div className={`max-w-[80%] p-3 px-4 rounded-[20px] ${
+              m.sender_id === currentUser 
+                ? 'bg-blue-600 text-white rounded-br-none shadow-blue-500/20 shadow-lg' 
+                : 'bg-white/10 backdrop-blur-md text-white rounded-bl-none border border-white/5'
+            }`}>
+              <p className="text-[15px] leading-snug">{m.content}</p>
+            </div>
+          </div>
+        ))}
+        {/* Якорь для скролла + отступ чтобы инпут не закрывал текст */}
+        <div ref={scrollRef} className="h-24" />
       </div>
 
-      {/* INPUT AREA: Floating Dynamic Pill */}
-      <div className="absolute bottom-6 left-4 right-4">
-        <div className="ios-glass p-1.5 pl-5 pr-1.5 flex items-center gap-3 rounded-[32px] bg-white/10 border border-white/10 shadow-2xl backdrop-blur-xl">
+      {/* Поле ввода - Опущено вниз */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <div className="ios-input-container flex items-center gap-2 p-1.5 pl-4 rounded-[28px]">
           <input
-            className="flex-1 bg-transparent py-3 outline-none text-[16px] placeholder:text-white/30 font-medium"
-            placeholder="iMessage..."
+            className="flex-1 bg-transparent py-2.5 outline-none text-[16px] placeholder:text-white/30"
+            placeholder="Ваше сообщение..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -337,14 +326,11 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className={`
-              w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
-              ${input.trim() 
-                ? 'bg-blue-500 text-white rotate-0 scale-100 shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
-                : 'bg-white/5 text-white/10 rotate-90 scale-75'}
-            `}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+              input.trim() ? 'bg-white text-black scale-100' : 'bg-white/10 text-white/20 scale-90'
+            }`}
           >
-            <SkipForward size={18} fill="currentColor" className={input.trim() ? "-rotate-90 ml-0.5" : ""} />
+            <SkipForward className="-rotate-90" size={18} fill="currentColor" />
           </button>
         </div>
       </div>
@@ -999,66 +985,57 @@ function App() {
             )}
             
             {/* 3. ЭКРАН ДРУЗЕЙ (Полная версия) */}
-            {/* --- ЭКРАН СПИСКА ДРУЗЕЙ --- */}
             {view === "friends" && (
-              <motion.div 
-                key="friends-screen" 
-                initial={{ x: "-100%" }} 
-                animate={{ x: 0 }} 
-                exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute inset-0 z-40 bg-black flex flex-col p-6 pt-16 rounded-[40px]"
-              >
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-black text-white">Друзья</h2>
-                  <button onClick={() => setView("player")} className="p-2 text-white/50 text-sm uppercase font-bold tracking-widest">Закрыть</button>
-                </div>
+            <motion.div 
+              key="friends" 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+              className="fixed inset-0 z-50 bg-black flex flex-col p-6 pt-16"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-white">Друзья</h2>
+                <button onClick={() => setView("player")} className="p-2 text-white/50">Назад</button>
+              </div>
 
-                <div className="flex gap-2 mb-6">
-                  <input 
-                    className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 text-white"
-                    placeholder="Ник или ID друга..."
-                    value={searchFriendQuery}
-                    onChange={(e) => setSearchFriendQuery(e.target.value)}
-                  />
-                  <button onClick={handleSearchFriend} className="p-4 bg-blue-600 rounded-2xl text-white active:scale-90 transition-transform">
-                    <Search size={20}/>
-                  </button>
-                </div>
+              <div className="flex gap-2 mb-6">
+                <input 
+                  className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 text-white"
+                  placeholder="Ник или ID друга..."
+                  value={searchFriendQuery}
+                  onChange={(e) => setSearchFriendQuery(e.target.value)}
+                />
+                <button 
+                  onClick={handleSearchFriend}
+                  className="p-4 bg-blue-600 rounded-2xl text-white"
+                >
+                  <Search size={20}/>
+                </button>
+              </div>
 
-                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar">
-                  {foundUsers.map(user => (
-                    <div 
-                      key={user.id} 
-                      onClick={() => { setActiveFriend(user); setView("chat"); }}
-                      className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 active:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-500 flex items-center justify-center font-bold shadow-lg">
-                          {user.username?.[0] || "?"}
-                        </div>
-                        <div>
-                          <p className="font-bold text-white text-sm">{user.username}</p>
-                          <p className="text-[10px] opacity-40 text-white font-mono">{user.id}</p>
-                        </div>
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {foundUsers.map(user => (
+                  <div 
+                    key={user.id} 
+                    onClick={() => { setActiveFriend(user); setView("chat"); }}
+                    className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">
+                        {user.username?.[0] || "?"}
                       </div>
-                      <div className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full uppercase tracking-widest">Открыть</div>
+                      <div>
+                        <p className="font-bold text-white">{user.username}</p>
+                        <p className="text-[10px] opacity-40 text-white">{user.id}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* --- ЭКРАН ЧАТА --- */}
+                    <button className="text-xs text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full">Чат</button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+            {/* 4. ЧАТ (Выносим сюда!) */}
             {view === "chat" && activeFriend && (
-              <motion.div
-                key="chat-screen"
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="absolute inset-0 z-50 overflow-hidden rounded-[40px] bg-black"
-              >
+              <motion.div key="chat" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute inset-0 z-[60] bg-black">
                 <ChatView
                   currentUser={USER_ID}
                   friend={activeFriend}
