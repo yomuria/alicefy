@@ -17,8 +17,6 @@ import { createClient } from "@supabase/supabase-js";
 import Glass from "./components/Glass";
 import Aurora from "./components/Aurora";
 
-console.log(import.meta.env);
-
 // Инициализация Supabase
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -151,7 +149,7 @@ const FriendsView = ({ userId, onSelectFriend }) => {
     <div className="h-full flex flex-col p-4">
       <h2 className="text-2xl font-bold mb-4">Друзья</h2>
       <div className="flex gap-2 mb-6">
-        <input 
+        <input
           className="flex-1 bg-white/10 rounded-xl px-4 py-2 outline-none"
           placeholder="Поиск..."
           value={search}
@@ -192,7 +190,7 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
         setMessages(prev => [...prev, payload.new]);
       }).subscribe();
-    
+
     return () => supabase.removeChannel(channel);
   }, [friend.id]);
 
@@ -263,7 +261,7 @@ function App() {
   const [syncCode, setSyncCode] = useState(null);
 
 
-  
+
   // Инициализация пользователя при загрузке
   useEffect(() => {
     const username = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || `User_${USER_ID.slice(0, 5)}`;
@@ -525,7 +523,7 @@ function App() {
               {view === "favorites" ? "Library" : "AliceFY"}
             </span>
           </div>
-          
+
           {/* Кнопка Друзья (Новая!) */}
           <button
             onClick={() => setView("friends")}
@@ -623,7 +621,7 @@ function App() {
                           />
                         </button>
                       </div>
-                      
+
                       {/* --- ПРОГРЕСС БАР --- */}
                       <div className="mb-6 group">
                         <div className="relative h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -693,7 +691,7 @@ function App() {
                           />
                         </button>
                       </div>
-                     
+
 
                       {/* --- DYNAMIC ISLAND VOLUME --- */}
                       <div className="flex justify-center mt-4">
@@ -859,9 +857,9 @@ function App() {
             {/* 4. ЧАТ (Выносим сюда!) */}
             {view === "chat" && activeFriend && (
               <motion.div key="chat" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute inset-0 z-[60] bg-black">
-                <ChatView 
-                  currentUser={USER_ID} 
-                  friend={activeFriend} 
+                <ChatView
+                  currentUser={USER_ID}
+                  friend={activeFriend}
                   onBack={() => setView("friends")}
                   onPlayTrack={(track) => {
                     handleSelectTrack(track);
