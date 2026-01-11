@@ -158,17 +158,23 @@ const FriendsView = ({ userId, onSelectFriend }) => {
     SocialService.getFriends(userId).then(setFriends);
   }, [userId]);
 
-  const handleSearchFriend = async () => {
-    if (!searchFriendQuery.trim()) return;
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .or(`username.ilike.%${searchFriendQuery}%,id.eq.${searchFriendQuery}`)
-      .neq("id", USER_ID);
+  // Было: const handleSearchFriend = () => { ...
+// Стало:
+const handleSearchFriend = async () => {
+  if (!searchFriendQuery.trim()) return;
+  const term = searchFriendQuery.trim();
+  const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
 
-    if (error) console.error(error);
-    else setFoundUsers(data || []);
-  };
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .or(`username.ilike.%${term}%,id.eq.${term},id.eq.${withTg}`)
+    .neq("id", USER_ID)
+    .limit(10);
+
+  if (error) console.error(error);
+  else setFoundUsers(data || []);
+};
 
   const term = searchFriendQuery.trim();
   const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
