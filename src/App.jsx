@@ -254,30 +254,64 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   return (
-    <div className="h-full flex flex-col bg-black">
-      <div className="p-4 border-b border-white/10 flex gap-4 items-center">
-        <button onClick={onBack}><ArrowLeft/></button>
-        <span className="font-bold">{friend.username}</span>
+    <div className="h-full flex flex-col bg-black/90 backdrop-blur-xl">
+      {/* Header - Glassmorphism */}
+      <div className="p-6 pt-12 border-b border-white/5 flex gap-4 items-center ios-glass">
+        <button onClick={onBack} className="p-2 bg-white/5 rounded-full"><ArrowLeft size={20}/></button>
+        <div className="flex flex-col">
+          <span className="font-bold text-lg leading-none">{friend.username}</span>
+          <span className="text-[10px] text-green-400 uppercase tracking-widest mt-1">online</span>
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
         {messages.map(m => (
           <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`p-3 rounded-2xl max-w-[80%] ${m.sender_id === currentUser ? 'bg-blue-600' : 'bg-white/10'}`}>
+            <div className={`p-3 px-4 rounded-[22px] max-w-[85%] shadow-lg ${
+              m.sender_id === currentUser 
+                ? 'bg-blue-600 text-white rounded-tr-none' 
+                : 'bg-white/10 backdrop-blur-md text-white rounded-tl-none border border-white/5'
+            }`}>
               {m.type === 'track' ? (
-                <div className="flex items-center gap-2">
-                  <img src={m.track_data.cover} className="w-10 h-10 rounded-lg" />
-                  <div className="text-xs truncate">{m.track_data.title}</div>
-                  <button onClick={() => onPlayTrack(m.track_data)} className="p-1 bg-white text-black rounded-full"><Play size={14}/></button>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <img src={m.track_data.cover} className="w-12 h-12 rounded-lg object-cover" />
+                    <button onClick={() => onPlayTrack(m.track_data)} className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                      <Play size={16} fill="white"/>
+                    </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] opacity-60 uppercase font-bold">Shared Track</div>
+                    <div className="text-sm font-bold truncate">{m.track_data.title}</div>
+                  </div>
                 </div>
-              ) : m.content}
+              ) : (
+                <span className="text-[15px] leading-relaxed">{m.content}</span>
+              )}
             </div>
           </div>
         ))}
-        <div ref={scrollRef} />
+        <div ref={scrollRef} className="h-20" /> {/* Отступ снизу, чтобы текст не перекрывался инпутом */}
       </div>
-      <div className="p-4 flex gap-2">
-        <input className="flex-1 bg-white/10 rounded-xl px-4 py-2" value={input} onChange={e => setInput(e.target.value)} />
-        <button onClick={() => { SocialService.sendMessage(currentUser, friend.id, input); setInput(""); }}>Отправить</button>
+
+      {/* Input Area - Floating Dynamic Island Style */}
+      <div className="p-4 pb-8">
+        <div className="ios-glass-heavy flex items-center gap-2 p-2 pl-4 pr-2 rounded-[30px] border border-white/10">
+          <input 
+            className="flex-1 bg-transparent py-2 outline-none text-[15px] placeholder:text-white/20" 
+            placeholder="Cообщение..."
+            value={input} 
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && /* вызвать send */ null}
+          />
+          <button 
+            onClick={() => { SocialService.sendMessage(currentUser, friend.id, input); setInput(""); }}
+            className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform"
+          >
+            <ArrowLeft className="rotate-90" size={18}/>
+          </button>
+        </div>
       </div>
     </div>
   );
