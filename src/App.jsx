@@ -159,7 +159,16 @@ const FriendsView = ({ userId, onSelectFriend }) => {
   }, [userId]);
 
   const handleSearchFriend = async () => {
-  if (!searchFriendQuery.trim()) return;
+    if (!searchFriendQuery.trim()) return;
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .or(`username.ilike.%${searchFriendQuery}%,id.eq.${searchFriendQuery}`)
+      .neq("id", USER_ID);
+
+    if (error) console.error(error);
+    else setFoundUsers(data || []);
+  };
 
   const term = searchFriendQuery.trim();
   const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
@@ -887,86 +896,53 @@ function App() {
             
             {/* 3. ЭКРАН ДРУЗЕЙ (Полная версия) */}
             {view === "friends" && (
-              <motion.div 
-                key="friends" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex flex-col p-6 pt-16"
-              >
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-black">Друзья</h2>
-                  <button onClick={() => setView("player")} className="p-2 opacity-50"><ArrowLeft /></button>
-                </div>
+            <motion.div 
+              key="friends" 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+              className="fixed inset-0 z-50 bg-black flex flex-col p-6 pt-16"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-white">Друзья</h2>
+                <button onClick={() => setView("player")} className="p-2 text-white/50">Назад</button>
+              </div>
 
-                {/* Поле поиска */}
-                <div className="flex gap-2 mb-6">
-                  <input 
-                    className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 focus:border-blue-500/50"
-                    placeholder="Введите ник или ID..."
-                    value={searchFriendQuery} 
-                    onChange={(e) => setSearchFriendQuery(e.target.value)}
-                  />
-                  <button 
-                    onClick={handleSearchFriend} // Та самая функция, которую мы поправили
-                    className="p-4 bg-blue-600 rounded-2xl active:scale-95 transition-transform"
+              <div className="flex gap-2 mb-6">
+                <input 
+                  className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 text-white"
+                  placeholder="Ник или ID друга..."
+                  value={searchFriendQuery}
+                  onChange={(e) => setSearchFriendQuery(e.target.value)}
+                />
+                <button 
+                  onClick={handleSearchFriend}
+                  className="p-4 bg-blue-600 rounded-2xl text-white"
+                >
+                  <Search size={20}/>
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3">
+                {foundUsers.map(user => (
+                  <div 
+                    key={user.id} 
+                    onClick={() => { setActiveFriend(user); setView("chat"); }}
+                    className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5"
                   >
-                    <Search size={20}/>
-                  </button>
-                </div>
-
-                {/* Список найденных пользователей */}
-                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar">
-                  {foundUsers.map(user => (
-                    <div 
-                      key={user.id} 
-                      onClick={() => {
-                        setActiveFriend(user);
-                        setView("chat");
-                      }}
-                      className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 active:bg-white/10"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-lg shadow-lg">
-                          {user.username?.[0]?.toUpperCase() || "?"}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold truncate">{user.username || "Без имени"}</p>
-                          <p className="text-[10px] opacity-40 font-mono truncate">{user.id}</p>
-                        </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">
+                        {user.username?.[0] || "?"}
                       </div>
-                      <div className="text-blue-400 text-xs font-medium bg-blue-400/10 px-3 py-1 rounded-full">
-                        Написать
+                      <div>
+                        <p className="font-bold text-white">{user.username}</p>
+                        <p className="text-[10px] opacity-40 text-white">{user.id}</p>
                       </div>
                     </div>
-                  ))}
-
-                  {/* Состояние "Ничего не найдено" */}
-                  {foundUsers.length === 0 && searchFriendQuery && (
-                    <div className="text-center py-20 opacity-30">
-                      <Users size={48} className="mx-auto mb-4" />
-                      <p>Пользователь не найден</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Твой ID внизу, чтобы удобно было давать друзьям */}
-                <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] opacity-40 uppercase tracking-widest mb-1">Мой ID</p>
-                    <code className="text-sm text-blue-400">{USER_ID}</code>
+                    <button className="text-xs text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full">Чат</button>
                   </div>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(USER_ID);
-                      tg?.showScanQrPopup({ text: "ID скопирован!" }); // Если в ТГ, покажет уведомление
-                    }}
-                    className="text-[10px] bg-white/10 px-3 py-1.5 rounded-lg active:bg-white/20"
-                  >
-                    Копировать
-                  </button>
-                </div>
-              </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
             )}
             {/* 4. ЧАТ (Выносим сюда!) */}
             {view === "chat" && activeFriend && (
