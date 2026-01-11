@@ -152,7 +152,7 @@ const SocialService = {
 const FriendsView = ({ userId, onSelectFriend }) => {
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
-  const [foundUsers, setFoundUsers] = useState([]);
+
 
   useEffect(() => {
     SocialService.getFriends(userId).then(setFriends);
@@ -273,7 +273,6 @@ function App() {
   const [favorites, setFavorites] = useState([]);
   const [searchFriendQuery, setSearchFriendQuery] = useState(""); // Текст в поиске друзей
   const [foundUsers, setFoundUsers] = useState([]); // Результаты поиска
-  const [activeFriend, setActiveFriend] = useState(null); // С кем сейчас чат
   const [colors, setColors] = useState({
     primary: "#4c1d95",
     secondary: "#2e1065",
@@ -885,7 +884,7 @@ function App() {
                 )}
               </motion.div>
             )}
-            {/* 3. ДРУЗЬЯ (Выносим сюда!) */}
+            
             {/* 3. ЭКРАН ДРУЗЕЙ (Полная версия) */}
             {view === "friends" && (
               <motion.div 
