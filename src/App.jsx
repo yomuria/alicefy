@@ -100,15 +100,24 @@ const SocialService = {
   },
 
   async searchUsers(query, currentUserId) {
-    const { data } = await supabase
+    if (!query) return [];
+    
+    // Убираем лишние пробелы и приводим к нижнему регистру
+    const searchTerm = query.trim().toLowerCase();
+    const withTg = searchTerm.startsWith('tg_') ? searchTerm : `tg_${searchTerm}`;
+
+    const { data, error } = await supabase
       .from("users")
       .select("*")
-      // Используем .or для поиска по двум полям сразу
-      // ilike — поиск по имени (частичное совпадение)
-      // eq — поиск по ID (точное совпадение)
-      .or(`username.ilike.%${query}%,id.eq.${query}`) 
-      .neq("id", currentUserId) // Не находить самого себя
+      // В Supabase синтаксис OR требует запятых между условиями
+      .or(`username.ilike.%${searchTerm}%,id.eq.${searchTerm},id.eq.${withTg}`)
+      .neq("id", currentUserId)
       .limit(10);
+
+    if (error) {
+      console.error("Ошибка поиска:", error);
+      return [];
+    }
     return data || [];
   },
 
@@ -144,8 +153,17 @@ const FriendsView = ({ userId, onSelectFriend }) => {
   }, [userId]);
 
   const handleSearch = async () => {
-    const res = await SocialService.searchUsers(search, userId);
-    setFoundUsers(res);
+    if (!search.trim()) return;
+    
+    // Вызываем наш сервис
+    const results = await SocialService.searchUsers(search, userId);
+    
+    // ВАЖНО: обновляем стейт найденных юзеров
+    setFoundUsers(results);
+    
+    if (results.length === 0) {
+      console.log("Никого не нашли. Проверь таблицу 'users' в Supabase!");
+    }
   };
 
   return (
