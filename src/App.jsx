@@ -103,8 +103,11 @@ const SocialService = {
     const { data } = await supabase
       .from("users")
       .select("*")
-      .ilike("username", `%${query}%`)
-      .neq("id", currentUserId)
+      // Используем .or для поиска по двум полям сразу
+      // ilike — поиск по имени (частичное совпадение)
+      // eq — поиск по ID (точное совпадение)
+      .or(`username.ilike.%${query}%,id.eq.${query}`) 
+      .neq("id", currentUserId) // Не находить самого себя
       .limit(10);
     return data || [];
   },
