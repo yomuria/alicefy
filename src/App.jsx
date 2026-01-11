@@ -158,19 +158,27 @@ const FriendsView = ({ userId, onSelectFriend }) => {
     SocialService.getFriends(userId).then(setFriends);
   }, [userId]);
 
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-    
-    // Вызываем наш сервис
-    const results = await SocialService.searchUsers(search, userId);
-    
-    // ВАЖНО: обновляем стейт найденных юзеров
-    setFoundUsers(results);
-    
-    if (results.length === 0) {
-      console.log("Никого не нашли. Проверь таблицу 'users' в Supabase!");
-    }
-  };
+  const handleSearchFriend = async () => {
+  if (!searchFriendQuery.trim()) return;
+
+  const term = searchFriendQuery.trim();
+  const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .or(`username.ilike.%${term}%,id.eq.${term},id.eq.${withTg}`)
+    .neq("id", USER_ID)
+    .limit(10);
+
+  if (error) {
+    console.error("Ошибка поиска:", error);
+    alert("Ошибка базы данных");
+  } else {
+    console.log("Найдено:", data);
+    setFoundUsers(data); // Теперь это сработает!
+  }
+};
 
   return (
     <div className="h-full flex flex-col p-4">
@@ -263,6 +271,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [searchFriendQuery, setSearchFriendQuery] = useState(""); // Текст в поиске друзей
+  const [foundUsers, setFoundUsers] = useState([]); // Результаты поиска
+  const [activeFriend, setActiveFriend] = useState(null); // С кем сейчас чат
   const [colors, setColors] = useState({
     primary: "#4c1d95",
     secondary: "#2e1065",
@@ -875,10 +886,87 @@ function App() {
               </motion.div>
             )}
             {/* 3. ДРУЗЬЯ (Выносим сюда!) */}
+            {/* 3. ЭКРАН ДРУЗЕЙ (Полная версия) */}
             {view === "friends" && (
-              <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col">
-                <FriendsView userId={USER_ID} onSelectFriend={handleFriendSelect} />
-                <button onClick={() => setView("player")} className="mx-auto mb-6 bg-white/10 px-6 py-2 rounded-full">Назад</button>
+              <motion.div 
+                key="friends" 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex flex-col p-6 pt-16"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-black">Друзья</h2>
+                  <button onClick={() => setView("player")} className="p-2 opacity-50"><ArrowLeft /></button>
+                </div>
+
+                {/* Поле поиска */}
+                <div className="flex gap-2 mb-6">
+                  <input 
+                    className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 focus:border-blue-500/50"
+                    placeholder="Введите ник или ID..."
+                    value={searchFriendQuery} 
+                    onChange={(e) => setSearchFriendQuery(e.target.value)}
+                  />
+                  <button 
+                    onClick={handleSearchFriend} // Та самая функция, которую мы поправили
+                    className="p-4 bg-blue-600 rounded-2xl active:scale-95 transition-transform"
+                  >
+                    <Search size={20}/>
+                  </button>
+                </div>
+
+                {/* Список найденных пользователей */}
+                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar">
+                  {foundUsers.map(user => (
+                    <div 
+                      key={user.id} 
+                      onClick={() => {
+                        setActiveFriend(user);
+                        setView("chat");
+                      }}
+                      className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 active:bg-white/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-lg shadow-lg">
+                          {user.username?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold truncate">{user.username || "Без имени"}</p>
+                          <p className="text-[10px] opacity-40 font-mono truncate">{user.id}</p>
+                        </div>
+                      </div>
+                      <div className="text-blue-400 text-xs font-medium bg-blue-400/10 px-3 py-1 rounded-full">
+                        Написать
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Состояние "Ничего не найдено" */}
+                  {foundUsers.length === 0 && searchFriendQuery && (
+                    <div className="text-center py-20 opacity-30">
+                      <Users size={48} className="mx-auto mb-4" />
+                      <p>Пользователь не найден</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Твой ID внизу, чтобы удобно было давать друзьям */}
+                <div className="mt-4 p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] opacity-40 uppercase tracking-widest mb-1">Мой ID</p>
+                    <code className="text-sm text-blue-400">{USER_ID}</code>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(USER_ID);
+                      tg?.showScanQrPopup({ text: "ID скопирован!" }); // Если в ТГ, покажет уведомление
+                    }}
+                    className="text-[10px] bg-white/10 px-3 py-1.5 rounded-lg active:bg-white/20"
+                  >
+                    Копировать
+                  </button>
+                </div>
               </motion.div>
             )}
             {/* 4. ЧАТ (Выносим сюда!) */}
