@@ -231,6 +231,31 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef();
+  // Отправка сообщения
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    
+    // Вызываем твой сервис (убедись, что SocialService доступен)
+    const { error } = await supabase.from('messages').insert({
+      sender_id: currentUser,
+      receiver_id: friend.id,
+      content: input,
+      type: 'text'
+    });
+
+    if (!error) {
+      setInput("");
+      // Легкая вибрация при отправке (iOS style)
+      window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
+    }
+  };
+
+  // Обработка Enter
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSend();
+    }
+  };
 
   useEffect(() => {
     const loadChat = async () => {
@@ -254,62 +279,50 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   return (
-    <div className="h-full flex flex-col bg-black/90 backdrop-blur-xl">
-      {/* Header - Glassmorphism */}
-      <div className="p-6 pt-12 border-b border-white/5 flex gap-4 items-center ios-glass">
-        <button onClick={onBack} className="p-2 bg-white/5 rounded-full"><ArrowLeft size={20}/></button>
-        <div className="flex flex-col">
-          <span className="font-bold text-lg leading-none">{friend.username}</span>
-          <span className="text-[10px] text-green-400 uppercase tracking-widest mt-1">online</span>
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* Шапка */}
+      <div className="p-6 pt-12 ios-glass-heavy border-b border-white/10 flex items-center gap-4">
+        <button onClick={onBack} className="p-2 bg-white/5 rounded-full active:scale-90 transition-transform">
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h2 className="font-bold text-lg">{friend.username}</h2>
+          <p className="text-[10px] text-green-400 uppercase tracking-widest">Online</p>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
-        {messages.map(m => (
+      {/* Область сообщений */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+        {messages.map((m) => (
           <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'}`}>
-            <div className={`p-3 px-4 rounded-[22px] max-w-[85%] shadow-lg ${
+            <div className={`max-w-[80%] p-3 px-4 rounded-[22px] shadow-2xl ${
               m.sender_id === currentUser 
                 ? 'bg-blue-600 text-white rounded-tr-none' 
-                : 'bg-white/10 backdrop-blur-md text-white rounded-tl-none border border-white/5'
+                : 'bg-white/10 backdrop-blur-md border border-white/5 rounded-tl-none'
             }`}>
-              {m.type === 'track' ? (
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <img src={m.track_data.cover} className="w-12 h-12 rounded-lg object-cover" />
-                    <button onClick={() => onPlayTrack(m.track_data)} className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
-                      <Play size={16} fill="white"/>
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] opacity-60 uppercase font-bold">Shared Track</div>
-                    <div className="text-sm font-bold truncate">{m.track_data.title}</div>
-                  </div>
-                </div>
-              ) : (
-                <span className="text-[15px] leading-relaxed">{m.content}</span>
-              )}
+              <p className="text-[15px] leading-relaxed">{m.content}</p>
             </div>
           </div>
         ))}
-        <div ref={scrollRef} className="h-20" /> {/* Отступ снизу, чтобы текст не перекрывался инпутом */}
+        {/* Якорь для скролла */}
+        <div ref={scrollRef} className="h-24" /> 
       </div>
 
-      {/* Input Area - Floating Dynamic Island Style */}
-      <div className="p-4 pb-8">
-        <div className="ios-glass-heavy flex items-center gap-2 p-2 pl-4 pr-2 rounded-[30px] border border-white/10">
-          <input 
-            className="flex-1 bg-transparent py-2 outline-none text-[15px] placeholder:text-white/20" 
-            placeholder="Cообщение..."
-            value={input} 
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && /* вызвать send */ null}
+      {/* Поле ввода - Опущено вниз, стиль iOS 26 */}
+      <div className="p-4 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent">
+        <div className="ios-glass-heavy flex items-center gap-2 p-2 pl-5 rounded-[30px] border border-white/10 shadow-2xl">
+          <input
+            className="flex-1 bg-transparent py-3 outline-none text-[16px] placeholder:text-white/20"
+            placeholder="Сообщение..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown} // Слушаем Enter
           />
           <button 
-            onClick={() => { SocialService.sendMessage(currentUser, friend.id, input); setInput(""); }}
-            className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform"
+            onClick={handleSend}
+            className="w-11 h-11 bg-white text-black rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg"
           >
-            <ArrowLeft className="rotate-90" size={18}/>
+            <ArrowLeft className="rotate-90" size={20} />
           </button>
         </div>
       </div>
