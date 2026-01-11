@@ -227,34 +227,28 @@ const FriendsView = ({ userId, onSelectFriend }) => {
 // основной экран "friends" (view === "friends")
 
 // --- Компонент Чата ---
+// --- КОМПОНЕНТ ChatView (iOS 26 Style) ---
 const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef();
-  // Отправка сообщения
+
   const handleSend = async () => {
     if (!input.trim()) return;
-    
-    // Вызываем твой сервис (убедись, что SocialService доступен)
     const { error } = await supabase.from('messages').insert({
       sender_id: currentUser,
       receiver_id: friend.id,
       content: input,
       type: 'text'
     });
-
     if (!error) {
       setInput("");
-      // Легкая вибрация при отправке (iOS style)
       window.Telegram?.WebApp?.HapticFeedback.impactOccurred('light');
     }
   };
 
-  // Обработка Enter
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSend();
-    }
+    if (e.key === 'Enter') handleSend();
   };
 
   useEffect(() => {
@@ -279,46 +273,63 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#050505]">
-      {/* Шапка чата */}
-      <div className="p-6 pt-12 flex items-center gap-4 bg-black/40 backdrop-blur-md border-b border-white/5">
-        <button onClick={onBack} className="p-2 -ml-2 active:scale-90 transition-transform">
-          <ArrowLeft size={24} />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold">
-            {friend.username[0].toUpperCase()}
+    // Важно: absolute inset-0 держит чат ВНУТРИ скругленного контейнера App
+    <div className="absolute inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-3xl">
+      
+      {/* HEADER: Плавающее стекло */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-6 pt-8 pb-4 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={onBack} 
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md active:scale-90 transition-transform"
+          >
+            <ArrowLeft size={20} />
+          </button>
+
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-white tracking-wide">{friend.username}</span>
+            <span className="text-[10px] text-green-400 font-medium tracking-widest uppercase flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/> 
+              Online
+            </span>
           </div>
-          <div>
-            <div className="font-bold text-base leading-none">{friend.username}</div>
-            <div className="text-[10px] text-blue-400 font-medium tracking-widest uppercase mt-1">Online</div>
-          </div>
+
+          <div className="w-10 h-10" /> {/* Placeholder для симметрии */}
         </div>
       </div>
 
-      {/* Список сообщений */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-        {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.sender_id === currentUser ? 'justify-end' : 'justify-start'} message-appear`}>
-            <div className={`max-w-[80%] p-3 px-4 rounded-[20px] ${
-              m.sender_id === currentUser 
-                ? 'bg-blue-600 text-white rounded-br-none shadow-blue-500/20 shadow-lg' 
-                : 'bg-white/10 backdrop-blur-md text-white rounded-bl-none border border-white/5'
-            }`}>
-              <p className="text-[15px] leading-snug">{m.content}</p>
-            </div>
-          </div>
-        ))}
-        {/* Якорь для скролла + отступ чтобы инпут не закрывал текст */}
-        <div ref={scrollRef} className="h-24" />
+      {/* MESSAGES AREA */}
+      <div className="flex-1 overflow-y-auto px-4 pt-24 pb-28 chat-mask no-scrollbar">
+        <div className="space-y-6"> {/* Увеличенный отступ между группами */}
+          {messages.map((m, i) => {
+            const isMe = m.sender_id === currentUser;
+            return (
+              <div 
+                key={m.id || i} 
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'} message-appear`}
+                style={{ animationDelay: `${i * 0.05}s` }} // Каскадная анимация при загрузке
+              >
+                <div className={`
+                  msg-bubble max-w-[75%] p-4 text-[15px] leading-relaxed
+                  ${isMe 
+                    ? 'bg-blue-600/80 text-white rounded-[24px] rounded-br-sm' 
+                    : 'bg-white/10 text-white rounded-[24px] rounded-bl-sm'}
+                `}>
+                  {m.content}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={scrollRef} />
+        </div>
       </div>
 
-      {/* Поле ввода - Опущено вниз */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-black via-black/80 to-transparent">
-        <div className="ios-input-container flex items-center gap-2 p-1.5 pl-4 rounded-[28px]">
+      {/* INPUT AREA: Floating Dynamic Pill */}
+      <div className="absolute bottom-6 left-4 right-4">
+        <div className="ios-glass p-1.5 pl-5 pr-1.5 flex items-center gap-3 rounded-[32px] bg-white/10 border border-white/10 shadow-2xl backdrop-blur-xl">
           <input
-            className="flex-1 bg-transparent py-2.5 outline-none text-[16px] placeholder:text-white/30"
-            placeholder="Ваше сообщение..."
+            className="flex-1 bg-transparent py-3 outline-none text-[16px] placeholder:text-white/30 font-medium"
+            placeholder="iMessage..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -326,11 +337,14 @@ const ChatView = ({ currentUser, friend, onPlayTrack, onBack }) => {
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-              input.trim() ? 'bg-white text-black scale-100' : 'bg-white/10 text-white/20 scale-90'
-            }`}
+            className={`
+              w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+              ${input.trim() 
+                ? 'bg-blue-500 text-white rotate-0 scale-100 shadow-[0_0_15px_rgba(59,130,246,0.5)]' 
+                : 'bg-white/5 text-white/10 rotate-90 scale-75'}
+            `}
           >
-            <SkipForward className="-rotate-90" size={18} fill="currentColor" />
+            <SkipForward size={18} fill="currentColor" className={input.trim() ? "-rotate-90 ml-0.5" : ""} />
           </button>
         </div>
       </div>
@@ -1033,9 +1047,27 @@ function App() {
               </div>
             </motion.div>
           )}
-            {/* 4. ЧАТ (Выносим сюда!) */}
+            
+            {/* 4. ЧАТ (ОБНОВЛЕННАЯ АНИМАЦИЯ) */}
             {view === "chat" && activeFriend && (
-              <motion.div key="chat" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} className="absolute inset-0 z-[60] bg-black">
+              <motion.div
+                key="chat"
+                // Начальное состояние: смещен вправо и немного уменьшен
+                initial={{ x: "100%", opacity: 0.5, scale: 0.9 }}
+                // Активное состояние: на месте, полный размер
+                animate={{ x: 0, opacity: 1, scale: 1 }}
+                // Выход: улетает вправо, чуть уменьшаясь
+                exit={{ x: "100%", opacity: 0, scale: 0.9 }}
+                // iOS Spring Physics: жесткость, демпфирование, масса
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 300, 
+                  damping: 30, 
+                  mass: 1 
+                }}
+                // Важно: абсолютное позиционирование, чтобы не вылезать за рамки "телефона"
+                className="absolute inset-0 z-[60] overflow-hidden rounded-[40px]" 
+              >
                 <ChatView
                   currentUser={USER_ID}
                   friend={activeFriend}
