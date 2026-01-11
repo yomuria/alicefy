@@ -1,34 +1,39 @@
 {
-  "name": "my-spotify-app",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "homepage": "https://yomuria.github.io/my-spotify-app/",
-  "main": "main.cjs",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "gh-pages -d dist",
-    "lint": "eslint .",
-    "electron": "electron ."
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
-    "fast-average-color": "^9.4.0",
-    "framer-motion": "^11.0.0",
-    "lucide-react": "^0.446.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.17",
-    "electron": "^31.0.0",
-    "eslint": "^8.56.0",
-    "gh-pages": "^6.1.1",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "vite": "^5.1.0"
-  }
-}
+  "homepage": "https://yomuria.github.io/my-spotify-app/",
+  "name": "my-spotify-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "deploy": "gh-pages -d dist",
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.90.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/vite": "^4.1.18",
+    "fast-average-color": "^9.5.0",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.23",
+    "electron": "^39.2.7",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "vite": "^7.2.4"
+  },
