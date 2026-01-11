@@ -102,22 +102,28 @@ const SocialService = {
   async searchUsers(query, currentUserId) {
     if (!query) return [];
     
-    // Убираем лишние пробелы и приводим к нижнему регистру
-    const searchTerm = query.trim().toLowerCase();
-    const withTg = searchTerm.startsWith('tg_') ? searchTerm : `tg_${searchTerm}`;
+    // 1. Очищаем ввод от лишних пробелов
+    const cleanQuery = query.trim();
+    
+    // 2. Умная проверка на tg_ (чтобы не было tg_tg_)
+    let searchTerm = cleanQuery;
+    let searchTermWithTg = cleanQuery.startsWith('tg_') ? cleanQuery : `tg_${cleanQuery}`;
 
+    console.log("Ищем:", searchTerm, "или", searchTermWithTg);
+
+    // 3. Строим запрос
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      // В Supabase синтаксис OR требует запятых между условиями
-      .or(`username.ilike.%${searchTerm}%,id.eq.${searchTerm},id.eq.${withTg}`)
-      .neq("id", currentUserId)
+      .or(`username.ilike.%${searchTerm}%,id.eq.${searchTerm},id.eq.${searchTermWithTg}`)
+      .neq("id", currentUserId) // Убедись, что тут передается полный ID: tg_123...
       .limit(10);
 
     if (error) {
-      console.error("Ошибка поиска:", error);
+      console.error("Ошибка Supabase:", error);
       return [];
     }
+
     return data || [];
   },
 
