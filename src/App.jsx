@@ -999,74 +999,65 @@ function App() {
             )}
             
             {/* 3. ЭКРАН ДРУЗЕЙ (Полная версия) */}
+            {/* --- ЭКРАН СПИСКА ДРУЗЕЙ --- */}
             {view === "friends" && (
-            <motion.div 
-              key="friends" 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-              className="fixed inset-0 z-50 bg-black flex flex-col p-6 pt-16"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-black text-white">Друзья</h2>
-                <button onClick={() => setView("player")} className="p-2 text-white/50">Назад</button>
-              </div>
+              <motion.div 
+                key="friends-screen" 
+                initial={{ x: "-100%" }} 
+                animate={{ x: 0 }} 
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="absolute inset-0 z-40 bg-black flex flex-col p-6 pt-16 rounded-[40px]"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-black text-white">Друзья</h2>
+                  <button onClick={() => setView("player")} className="p-2 text-white/50 text-sm uppercase font-bold tracking-widest">Закрыть</button>
+                </div>
 
-              <div className="flex gap-2 mb-6">
-                <input 
-                  className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 text-white"
-                  placeholder="Ник или ID друга..."
-                  value={searchFriendQuery}
-                  onChange={(e) => setSearchFriendQuery(e.target.value)}
-                />
-                <button 
-                  onClick={handleSearchFriend}
-                  className="p-4 bg-blue-600 rounded-2xl text-white"
-                >
-                  <Search size={20}/>
-                </button>
-              </div>
+                <div className="flex gap-2 mb-6">
+                  <input 
+                    className="flex-1 bg-white/10 rounded-2xl px-4 py-3 outline-none border border-white/5 text-white"
+                    placeholder="Ник или ID друга..."
+                    value={searchFriendQuery}
+                    onChange={(e) => setSearchFriendQuery(e.target.value)}
+                  />
+                  <button onClick={handleSearchFriend} className="p-4 bg-blue-600 rounded-2xl text-white active:scale-90 transition-transform">
+                    <Search size={20}/>
+                  </button>
+                </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3">
-                {foundUsers.map(user => (
-                  <div 
-                    key={user.id} 
-                    onClick={() => { setActiveFriend(user); setView("chat"); }}
-                    className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold">
-                        {user.username?.[0] || "?"}
+                <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar">
+                  {foundUsers.map(user => (
+                    <div 
+                      key={user.id} 
+                      onClick={() => { setActiveFriend(user); setView("chat"); }}
+                      className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 active:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-500 flex items-center justify-center font-bold shadow-lg">
+                          {user.username?.[0] || "?"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-white text-sm">{user.username}</p>
+                          <p className="text-[10px] opacity-40 text-white font-mono">{user.id}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-white">{user.username}</p>
-                        <p className="text-[10px] opacity-40 text-white">{user.id}</p>
-                      </div>
+                      <div className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full uppercase tracking-widest">Открыть</div>
                     </div>
-                    <button className="text-xs text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full">Чат</button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-            
-            {/* 4. ЧАТ (ОБНОВЛЕННАЯ АНИМАЦИЯ) */}
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* --- ЭКРАН ЧАТА --- */}
             {view === "chat" && activeFriend && (
               <motion.div
-                key="chat"
-                // Начальное состояние: смещен вправо и немного уменьшен
-                initial={{ x: "100%", opacity: 0.5, scale: 0.9 }}
-                // Активное состояние: на месте, полный размер
-                animate={{ x: 0, opacity: 1, scale: 1 }}
-                // Выход: улетает вправо, чуть уменьшаясь
-                exit={{ x: "100%", opacity: 0, scale: 0.9 }}
-                // iOS Spring Physics: жесткость, демпфирование, масса
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 300, 
-                  damping: 30, 
-                  mass: 1 
-                }}
-                // Важно: абсолютное позиционирование, чтобы не вылезать за рамки "телефона"
-                className="absolute inset-0 z-[60] overflow-hidden rounded-[40px]" 
+                key="chat-screen"
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="absolute inset-0 z-50 overflow-hidden rounded-[40px] bg-black"
               >
                 <ChatView
                   currentUser={USER_ID}
@@ -1078,6 +1069,7 @@ function App() {
                   }}
                 />
               </motion.div>
+            )}
             )}
           </AnimatePresence>
         </div>

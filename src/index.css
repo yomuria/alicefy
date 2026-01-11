@@ -190,13 +190,10 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%);
 }
 
-/* Пузырьки сообщений */
 .msg-bubble {
   position: relative;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .msg-bubble::before {
