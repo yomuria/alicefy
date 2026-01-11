@@ -160,8 +160,12 @@ const FriendsView = ({ userId, onSelectFriend }) => {
 
   // Было: const handleSearchFriend = () => {s ...
 // Стало:
-const handleSearchFriend = async () => {
-  if (!searchFriendQuery.trim()) return;
+const handleSearch = async () => {
+    if (!search.trim()) return;
+    
+    const results = await SocialService.searchUsers(search, userId);
+    // Здесь нужно добавить состояние для результатов поиска
+  };
   const term = searchFriendQuery.trim();
   const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
 
@@ -175,9 +179,6 @@ const handleSearchFriend = async () => {
   if (error) console.error(error);
   else setFoundUsers(data || []);
 };
-
-  const term = searchFriendQuery.trim();
-  const withTg = term.startsWith('tg_') ? term : `tg_${term}`;
 
   const { data, error } = await supabase
     .from("users")
