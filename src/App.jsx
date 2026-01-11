@@ -525,6 +525,16 @@ function App() {
               {view === "favorites" ? "Library" : "AliceFY"}
             </span>
           </div>
+          
+          {/* Кнопка Друзья (Новая!) */}
+          <button
+            onClick={() => setView("friends")}
+            className={`flex flex-col items-center gap-1 transition-all ${view === 'friends' ? 'text-blue-500 scale-110' : 'opacity-50'}`}
+          >
+            <Users size={22} />
+            <span className="text-[10px] font-medium">Друзья</span>
+          </button>
+
 
           <button
             onClick={() =>
@@ -683,12 +693,7 @@ function App() {
                           />
                         </button>
                       </div>
-                       <button 
-                          onClick={() => setView("friends")}
-                          className="absolute top-2 right-2 p-2 bg-white/10 rounded-full z-20" // Подстрой стили позиционирования
-                        >
-                          <Users size={20} /> 
-                        </button>
+                     
 
                       {/* --- DYNAMIC ISLAND VOLUME --- */}
                       <div className="flex justify-center mt-4">
